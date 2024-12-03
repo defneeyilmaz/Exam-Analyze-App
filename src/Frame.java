@@ -1,9 +1,9 @@
 import javax.swing.*;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 
 public class Frame extends JFrame {
     Toolkit kit = Toolkit.getDefaultToolkit();
@@ -13,136 +13,177 @@ public class Frame extends JFrame {
     //------------------Left Panel---------------------
     LeftPanel leftPanel ;
     private class LeftPanel extends JPanel{
-        JPanel userPanel = new JPanel();
-        JPanel userNamePanel = new JPanel();
-        JLabel userNameLabel = new JLabel("     Username:");
-        JLabel userName = new JLabel("Ufuk Çelikkan");
-        JLabel department = new JLabel("       Software Engineering");
-        JPanel courseListPanel = new JPanel();
-        DefaultListModel<String> listModel = new DefaultListModel<>();
-        JList<String> list = new JList<>(listModel);
-        public String course;
-        JScrollPane scrollPane = new JScrollPane(list);
-        JPanel buttonsPanel = new JPanel();
-        JButton addButton = new JButton("Add Course");
-        JButton removeButton = new JButton("Remove Chosen Course");
+        //------------------User Information Panel---------------------
+        UserInfoPanel userInfoPanel;
+        private class UserInfoPanel extends JPanel{
+            JPanel userNamePanel;
+            JLabel userNameLabel;
+            JLabel userName;
+            JLabel department;
 
+            public UserInfoPanel(){
+                this.userNamePanel = new JPanel();
+                this.userNameLabel = new JLabel("     Username:");
+                this.userName = new JLabel("Ufuk Çelikkan");
+                this.department = new JLabel("       Software Engineering");
+                setLayout(new GridLayout(0,1));
+                add(this.userNamePanel);
+                this.userNamePanel.add(this.userNameLabel);
+                this.userNamePanel.add(this.userName);
+                this.userNamePanel.setLayout(new GridLayout(0,2));
+
+                setBorder(BorderFactory.createTitledBorder("User"));
+                this.department.setFont(this.department.getFont().deriveFont(Font.BOLD));
+                add(this.department);
+                setBorder(BorderFactory.createTitledBorder(""));
+            }
+        }
+        //------------------Course List Panel---------------------
+        CourseListPanel courseListPanel;
+        private class CourseListPanel extends JPanel{
+            DefaultListModel<String> listModel;
+            JList<String> list;
+            JScrollPane scrollPane;
+            String course;
+
+            public CourseListPanel(){
+                this.listModel = new DefaultListModel<>();
+                this.list = new JList<>(this.listModel);
+                this.scrollPane = new JScrollPane(this.list);
+
+                this.list.setFixedCellHeight(75);
+                this.list.setFixedCellWidth(width/10);
+                this.list.setVisibleRowCount(5);
+
+                this.scrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
+                add(this.scrollPane,BorderLayout.CENTER);
+                setBorder(BorderFactory.createTitledBorder(""));
+            }
+        }
+        //------------------Button Panel---------------------
+        ButtonPanel buttonPanel;
+        private class ButtonPanel extends JPanel{
+            JButton addButton;
+            JButton removeButton;
+
+            public ButtonPanel(){
+                this.addButton = new JButton("Add Course");
+                this.removeButton = new JButton("Remove Chosen Course");
+
+                setLayout(new GridLayout(0,1));
+                add(this.addButton);
+                add(this.removeButton);
+                setBorder(BorderFactory.createTitledBorder(""));
+
+                this.addButton.addActionListener(new ActionListener() {
+                    final String[] SECourses = new String[]{"SE323", "SE321", "SE311", "SE375", "SE216",
+                            "SE209","SE322"};
+
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        Object selectedCourse = JOptionPane.showInputDialog(null,
+                                "Choose the course to add","Add Course",JOptionPane.QUESTION_MESSAGE,
+                                null, this.SECourses, this.SECourses[0]);
+                        if (!courseListPanel.listModel.contains(selectedCourse)) {
+                            courseListPanel.listModel.addElement(selectedCourse.toString());
+                        } else {
+                            JOptionPane.showMessageDialog(Frame.super.rootPane, "You already add this course");
+                        }
+                    }
+                });
+                this.removeButton.addActionListener(new ActionListener() {
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        int selectedIndex = courseListPanel.list.getSelectedIndex();
+                        if (selectedIndex != -1) {
+                            courseListPanel.listModel.remove(selectedIndex);
+                            rightPanel.setVisible(false);
+                        } else {
+                            JOptionPane.showMessageDialog(Frame.super.rootPane, "Choose a course to remove");
+                        }
+                    }
+                });
+                courseListPanel.list.addListSelectionListener(new ListSelectionListener() {
+                    @Override
+                    public void valueChanged(ListSelectionEvent event) {
+                        String selectedCourse = courseListPanel.list.getSelectedValue();
+                        if (selectedCourse != null) {
+                            rightPanel.courseNamePanel.updateCourseName(selectedCourse);
+                            rightPanel.setVisible(true);
+                        }
+                    }
+                });
+            }
+        }
         public LeftPanel(){
-            userNamePanel.add(userNameLabel); userNamePanel.add(userName);
-            userNamePanel.setLayout(new GridLayout(0,2));
-            //userNamePanel.setBorder(BorderFactory.createLineBorder(Color.DARK_GRAY,2));
-            userPanel.setPreferredSize(new Dimension(width/8, height/16*2));
-            department.setFont(department.getFont().deriveFont(Font.BOLD));
-            userPanel.add(userNamePanel);userPanel.add(department);
-            //userPanel.setLayout(new BoxLayout(userPanel, BoxLayout.Y_AXIS));
-            userPanel.setLayout(new GridLayout(2,0));
-            userPanel.setBorder(BorderFactory.createTitledBorder(""));
-
-            buttonsPanel.setPreferredSize(new Dimension(width/8, height/16));
-            buttonsPanel.add(addButton);
-            buttonsPanel.add(removeButton);
-            buttonsPanel.setLayout(new GridLayout(0,1));
-            buttonsPanel.setBorder(BorderFactory.createTitledBorder(""));
-            //temporary array, like get(department.courses)
-            String[] SECourses = new String[]{"SE323", "SE321", "SE311", "SE375", "SE216"};
-
-            list.addListSelectionListener(new ListSelectionListener() {
-                @Override
-                public void valueChanged(ListSelectionEvent event) {
-                    course = list.getSelectedValue();
-                    rightPanel.setCourseName(course);
-                    rightPanel.setVisible(true);
-                }
-            });
-
-            addButton.addActionListener(new ActionListener() {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    Object selectedCourse = JOptionPane.showInputDialog(null,
-                            "Choose the course to add","Add Course",JOptionPane.QUESTION_MESSAGE,
-                            null, SECourses, SECourses[0]);
-                    if (!listModel.contains(selectedCourse)) {
-                        listModel.addElement(selectedCourse.toString());
-                    } else {
-                        JOptionPane.showMessageDialog(Frame.super.rootPane, "You already add this course");
-                    }
-                }
-            });
-            removeButton.addActionListener(new ActionListener() {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    int selectedIndex = list.getSelectedIndex();
-                    if (selectedIndex != -1) {
-                        listModel.remove(selectedIndex);
-                    } else {
-                        JOptionPane.showMessageDialog(Frame.super.rootPane, "Choose a course to remove");
-                    }
-                }
-            });
-
-            list.setFixedCellHeight(75);
-            list.setFixedCellWidth(width/8);
-            list.setVisibleRowCount(5);
-
-            scrollPane.setPreferredSize(new Dimension(width/8, (height/16*8)));
-            scrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
-            courseListPanel.add(scrollPane);
-            courseListPanel.setBorder(BorderFactory.createLineBorder(Color.DARK_GRAY, 2));
-
-            add(userPanel);add(courseListPanel); add(buttonsPanel);
-            setLayout(new BoxLayout(this,BoxLayout.Y_AXIS));
+            this.userInfoPanel = new UserInfoPanel();
+            this.userInfoPanel.setPreferredSize(new Dimension(getWidth(), 155));
+            this.courseListPanel = new CourseListPanel();
+            this.courseListPanel.setPreferredSize(new Dimension(width/8, (height/16*8)));
+            this.buttonPanel = new ButtonPanel();
+            this.buttonPanel.setPreferredSize(new Dimension(getWidth(),155));
+            setLayout(new BorderLayout());
+            add(this.userInfoPanel,BorderLayout.NORTH);add(this.courseListPanel,BorderLayout.CENTER);add(this.buttonPanel,BorderLayout.SOUTH);
         }
     }
     //------------------Right Panel---------------------
     RightPanel rightPanel ;
     private class RightPanel extends JPanel {
         //------------------Course Name Panel---------------------
-        void setCourseName(String courseName){
-            //courseNamePanel = new CourseNamePanel(courseName);
-        }
+        CourseNamePanel courseNamePanel;
         private class CourseNamePanel extends JPanel {
-            JLabel courseNameLabel = new JLabel("Course Name: ");
+            JLabel courseNameLabel;
 
-            public CourseNamePanel(/*String courseName*/){
-                //courseNameLabel = new JLabel(courseNameLabel.getText() + courseName);
+            public CourseNamePanel() {
+                this.courseNameLabel = new JLabel();
                 add(courseNameLabel);
+            }
+
+            public void updateCourseName(String courseName) {
+                courseNameLabel.setText("Course Name: " + courseName);
             }
         }
         //------------------Course Information Panel---------------------
+        CourseInfoPanel courseInfoPanel;
         private class CourseInfoPanel extends JPanel {
-            JPanel loPanel = new JPanel();
-            JPanel studentPanel = new JPanel();
-            JPanel questionPanel = new JPanel();
-            JPanel examPanel = new JPanel();
+            JPanel loPanel;
+            JPanel studentPanel;
+            JPanel questionPanel;
+            JPanel examPanel;
 
             public CourseInfoPanel() {
+                this.loPanel = new JPanel();
+                this.studentPanel = new JPanel();
+                this.questionPanel = new JPanel();
+                this.examPanel = new JPanel();
+
                 setLayout(new BorderLayout());
 
-                loPanel.setLayout(new BoxLayout(loPanel, BoxLayout.Y_AXIS));
-                loPanel.setBorder(BorderFactory.createTitledBorder("Learning Outcomes"));
-                loPanel.add(new JLabel("LO1"));
-                loPanel.add(new JLabel("LO2"));
+                this.loPanel.setLayout(new BoxLayout(this.loPanel, BoxLayout.Y_AXIS));
+                this.loPanel.setBorder(BorderFactory.createTitledBorder("Learning Outcomes"));
+                this.loPanel.add(new JLabel("LO1"));
+                this.loPanel.add(new JLabel("LO2"));
 
-                loPanel.setPreferredSize(new Dimension(getWidth(), 310));
-                add(loPanel, BorderLayout.NORTH);
+                this.loPanel.setPreferredSize(new Dimension(getWidth(), 310));
+                add(this.loPanel, BorderLayout.NORTH);
 
-                studentPanel.setLayout(new BoxLayout(studentPanel, BoxLayout.Y_AXIS));
-                studentPanel.setBorder(BorderFactory.createTitledBorder("Students"));
-                studentPanel.add(new JLabel("Section 1: Hüs"));
-                studentPanel.add(new JLabel("Section 2: Def"));
+                this.studentPanel.setLayout(new BoxLayout(this.studentPanel, BoxLayout.Y_AXIS));
+                this.studentPanel.setBorder(BorderFactory.createTitledBorder("Students"));
+                this.studentPanel.add(new JLabel("Section 1: Hüs"));
+                this.studentPanel.add(new JLabel("Section 2: Def"));
 
-                studentPanel.setPreferredSize(new Dimension(300, getHeight()));
-                add(studentPanel, BorderLayout.EAST);
+                this.studentPanel.setPreferredSize(new Dimension(300, getHeight()));
+                add(this.studentPanel, BorderLayout.EAST);
 
-                questionPanel.setLayout(new BoxLayout(questionPanel, BoxLayout.Y_AXIS));
-                questionPanel.setBorder(BorderFactory.createTitledBorder("Questions"));
-                questionPanel.add(new JLabel("Q1"));
-                questionPanel.add(new JLabel("Q2"));
+                this.questionPanel.setLayout(new BoxLayout(this.questionPanel, BoxLayout.Y_AXIS));
+                this.questionPanel.setBorder(BorderFactory.createTitledBorder("Questions"));
+                this.questionPanel.add(new JLabel("Q1"));
+                this.questionPanel.add(new JLabel("Q2"));
 
-                examPanel.setLayout(new BoxLayout(examPanel, BoxLayout.Y_AXIS));
-                examPanel.setBorder(BorderFactory.createTitledBorder("Exams"));
-                examPanel.add(new JLabel("Exam 1"));
-                examPanel.add(new JLabel("Exam 2"));
+                this.examPanel.setLayout(new BoxLayout(this.examPanel, BoxLayout.Y_AXIS));
+                this.examPanel.setBorder(BorderFactory.createTitledBorder("Exams"));
+                this.examPanel.add(new JLabel("Exam 1"));
+                this.examPanel.add(new JLabel("Exam 2"));
 
                 JPanel leftColumn = new JPanel();
                 leftColumn.setLayout(new GridBagLayout());
@@ -153,13 +194,13 @@ public class Frame extends JFrame {
                 gbc.weighty = 0.5;
                 gbc.gridx = 0;
                 gbc.gridy = 0;
-                leftColumn.add(questionPanel, gbc);
+                leftColumn.add(this.questionPanel, gbc);
 
                 gbc.weightx = 1.0;
                 gbc.weighty = 0.5;
                 gbc.gridx = 0;
                 gbc.gridy = 1;
-                leftColumn.add(examPanel, gbc);
+                leftColumn.add(this.examPanel, gbc);
 
                 //they're sharing the remaining part 50-50
 
@@ -169,27 +210,32 @@ public class Frame extends JFrame {
 
         public RightPanel(){
             setLayout(new BorderLayout());
-            JLabel courseNameLabel = new JLabel();
-            JPanel courseNamePanel = new CourseNamePanel();
-            courseNamePanel.add(courseNameLabel);
-            JPanel courseInfoPanel = new CourseInfoPanel();
-            courseNamePanel.setPreferredSize(new Dimension(getWidth(),25));
-            add(courseNamePanel, BorderLayout.NORTH);
-            courseInfoPanel.setPreferredSize(new Dimension(getWidth(),690));
-            add(courseInfoPanel, BorderLayout.CENTER);
+            this.courseNamePanel = new CourseNamePanel();
+            this.courseNamePanel.add(this.courseNamePanel.courseNameLabel);
+            this.courseInfoPanel = new CourseInfoPanel();
+            this.courseNamePanel.setPreferredSize(new Dimension(getWidth(),25));
+            add(this.courseNamePanel, BorderLayout.NORTH);
+            this.courseInfoPanel.setPreferredSize(new Dimension(getWidth(),690));
+            add(this.courseInfoPanel, BorderLayout.CENTER);
         }
     }
 
     public Frame(){
-        leftPanel = new LeftPanel();
-        rightPanel = new RightPanel();
-        add(leftPanel, BorderLayout.WEST);
-        add(rightPanel, BorderLayout.CENTER);
-        rightPanel.setVisible(false);
+        this.leftPanel = new LeftPanel();
+        this.rightPanel = new RightPanel();
+        add(this.leftPanel, BorderLayout.WEST);
+        add(this.rightPanel, BorderLayout.CENTER);
+        this.rightPanel.setVisible(false);
 
         setSize(width/4*3, height/4*3);
         setLocation(width/8,height/8);
         setVisible(true);
+        setResizable(false);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+    }
+}
+class Test {
+    public static void main(String[] args) {
+        Frame frame = new Frame();
     }
 }

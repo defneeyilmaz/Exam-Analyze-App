@@ -44,7 +44,6 @@ public class Frame extends JFrame {
             DefaultListModel<String> listModel;
             JList<String> list;
             JScrollPane scrollPane;
-            String course;
 
             public CourseListPanel(){
                 this.listModel = new DefaultListModel<>();
@@ -56,6 +55,7 @@ public class Frame extends JFrame {
                 this.list.setVisibleRowCount(5);
 
                 this.scrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
+                setLayout(new BorderLayout());
                 add(this.scrollPane,BorderLayout.CENTER);
                 setBorder(BorderFactory.createTitledBorder(""));
             }
@@ -116,13 +116,13 @@ public class Frame extends JFrame {
             }
         }
         public LeftPanel(){
+            setLayout(new BorderLayout());
             this.userInfoPanel = new UserInfoPanel();
             this.userInfoPanel.setPreferredSize(new Dimension(getWidth(), 155));
             this.courseListPanel = new CourseListPanel();
             this.courseListPanel.setPreferredSize(new Dimension(width/8, (height/16*8)));
             this.buttonPanel = new ButtonPanel();
             this.buttonPanel.setPreferredSize(new Dimension(getWidth(),155));
-            setLayout(new BorderLayout());
             add(this.userInfoPanel,BorderLayout.NORTH);add(this.courseListPanel,BorderLayout.CENTER);add(this.buttonPanel,BorderLayout.SOUTH);
         }
     }
@@ -230,7 +230,6 @@ public class Frame extends JFrame {
         setSize(width/4*3, height/4*3);
         setLocation(width/8,height/8);
         setVisible(true);
-        setResizable(false);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
     }
 }

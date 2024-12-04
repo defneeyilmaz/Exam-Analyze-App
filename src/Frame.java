@@ -118,11 +118,11 @@ public class Frame extends JFrame {
         public LeftPanel(){
             setLayout(new BorderLayout());
             this.userInfoPanel = new UserInfoPanel();
-            this.userInfoPanel.setPreferredSize(new Dimension(getWidth(), 155));
+            this.userInfoPanel.setPreferredSize(new Dimension(width/8, (height/16*2)));
             this.courseListPanel = new CourseListPanel();
             this.courseListPanel.setPreferredSize(new Dimension(width/8, (height/16*8)));
             this.buttonPanel = new ButtonPanel();
-            this.buttonPanel.setPreferredSize(new Dimension(getWidth(),155));
+            this.buttonPanel.setPreferredSize(new Dimension(width/8, (height/16*2)));
             add(this.userInfoPanel,BorderLayout.NORTH);add(this.courseListPanel,BorderLayout.CENTER);add(this.buttonPanel,BorderLayout.SOUTH);
         }
     }
@@ -164,15 +164,14 @@ public class Frame extends JFrame {
                 this.loPanel.add(new JLabel("LO1"));
                 this.loPanel.add(new JLabel("LO2"));
 
-                this.loPanel.setPreferredSize(new Dimension(getWidth(), 310));
+                this.loPanel.setPreferredSize(new Dimension(width/16*14, (height/3)));
                 add(this.loPanel, BorderLayout.NORTH);
 
                 this.studentPanel.setLayout(new BoxLayout(this.studentPanel, BoxLayout.Y_AXIS));
                 this.studentPanel.setBorder(BorderFactory.createTitledBorder("Students"));
                 this.studentPanel.add(new JLabel("Section 1: Hüs"));
                 this.studentPanel.add(new JLabel("Section 2: Def"));
-
-                this.studentPanel.setPreferredSize(new Dimension(300, getHeight()));
+                this.studentPanel.setPreferredSize(new Dimension(width/5, (height/4)));
                 add(this.studentPanel, BorderLayout.EAST);
 
                 this.questionPanel.setLayout(new BoxLayout(this.questionPanel, BoxLayout.Y_AXIS));
@@ -186,23 +185,9 @@ public class Frame extends JFrame {
                 this.examPanel.add(new JLabel("Exam 2"));
 
                 JPanel leftColumn = new JPanel();
-                leftColumn.setLayout(new GridBagLayout());
-                GridBagConstraints gbc = new GridBagConstraints();
-                gbc.fill = GridBagConstraints.BOTH;
-
-                gbc.weightx = 1.0;
-                gbc.weighty = 0.5;
-                gbc.gridx = 0;
-                gbc.gridy = 0;
-                leftColumn.add(this.questionPanel, gbc);
-
-                gbc.weightx = 1.0;
-                gbc.weighty = 0.5;
-                gbc.gridx = 0;
-                gbc.gridy = 1;
-                leftColumn.add(this.examPanel, gbc);
-
-                //they're sharing the remaining part 50-50
+                leftColumn.setLayout(new GridLayout(0,1));
+                leftColumn.add(this.questionPanel);
+                leftColumn.add(this.examPanel);
 
                 add(leftColumn, BorderLayout.CENTER);
             }
@@ -213,9 +198,9 @@ public class Frame extends JFrame {
             this.courseNamePanel = new CourseNamePanel();
             this.courseNamePanel.add(this.courseNamePanel.courseNameLabel);
             this.courseInfoPanel = new CourseInfoPanel();
-            this.courseNamePanel.setPreferredSize(new Dimension(getWidth(),25));
+            this.courseNamePanel.setPreferredSize(new Dimension(width/8*7, (height/32)));
             add(this.courseNamePanel, BorderLayout.NORTH);
-            this.courseInfoPanel.setPreferredSize(new Dimension(getWidth(),690));
+            this.courseInfoPanel.setPreferredSize(new Dimension(width/8*7, (height/32*31)));
             add(this.courseInfoPanel, BorderLayout.CENTER);
         }
     }

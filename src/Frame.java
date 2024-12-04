@@ -2,8 +2,14 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Scanner;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
+import javax.swing.table.AbstractTableModel;
+import javax.swing.table.TableColumnModel;
 
 public class Frame extends JFrame {
     Toolkit kit = Toolkit.getDefaultToolkit();
@@ -152,16 +158,97 @@ public class Frame extends JFrame {
                 public LoPanel() {
                     setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
                     setBorder(BorderFactory.createTitledBorder("Learning Outcomes"));
-                    setPreferredSize(new Dimension(width / 16 * 14, (height / 3)));
+                    setPreferredSize(new Dimension(width / 16 * 14, (height/32*9)));
                 }
             }
-            //------------------Learning Outcome Panel---------------------
+            //------------------ Learning Outcome Panel ---------------------
             StudentPanel studentPanel;
             private class StudentPanel extends JPanel {
                 public StudentPanel() {
                     setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
                     setBorder(BorderFactory.createTitledBorder("Students"));
-                    setPreferredSize(new Dimension(width / 5, (height / 4)));
+                    setPreferredSize(new Dimension(width / 5, (height/32*14)));
+
+                    JTabbedPane tabbedPane = new JTabbedPane();
+                    add(tabbedPane, BorderLayout.CENTER);
+
+                    JPanel buttonPanel = new JPanel(); //---- Button Panel
+                    add(buttonPanel, BorderLayout.SOUTH);
+                    buttonPanel.setLayout(new FlowLayout(FlowLayout.CENTER, 10, 10));
+
+                    JButton addButton = new JButton("Add");
+                    JButton removeButton = new JButton("Remove");
+                    JButton seeButton = new JButton("See");
+                    buttonPanel.add(addButton); buttonPanel.add(removeButton); buttonPanel.add(seeButton);
+
+                    HashMap<String, ArrayList<Object[]>> sectionData = readStudentsFromCSV();
+
+                    for (String section : sectionData.keySet()) {
+                        StudentTableModel tableModel = new StudentTableModel(sectionData.get(section));
+                        JTable table = new JTable(tableModel);
+                        JScrollPane scrollPane = new JScrollPane(table);
+
+                        table.setRowHeight(height / 16);
+                        table.setAutoCreateRowSorter(true);
+
+                        TableColumnModel columnModel = table.getColumnModel();
+                        columnModel.getColumn(0).setPreferredWidth(width / 64 * 4);
+                        columnModel.getColumn(1).setPreferredWidth(width / 64 * 6);
+                        columnModel.getColumn(2).setPreferredWidth(width / 64 * 2);
+
+                        JPanel panel = new JPanel(new BorderLayout());
+                        panel.add(scrollPane, BorderLayout.CENTER);
+
+                        tabbedPane.addTab("Section " + section, panel);
+                    }
+                }
+                private HashMap<String, ArrayList<Object[]>> readStudentsFromCSV() {
+                    HashMap<String, ArrayList<Object[]>> sectionData = new HashMap<>();
+                    Scanner sc;
+                    try {
+
+                        sc = new Scanner(new File("students.csv"), "UTF-8");
+                        System.out.println(sc.hasNextLine());
+                        while (sc.hasNextLine()) {
+                            String[] line = sc.nextLine().split(",");
+                            if (line[0].trim().replace(" ", "").matches("^[1-9]\\d{10}$")) {
+                                String schoolID = line[0].trim();
+                                String nameSurname = line[1].trim();
+                                String section = line[2].trim();
+
+                                sectionData.putIfAbsent(section, new ArrayList<>());
+                                sectionData.get(section).add(new Object[]{schoolID, nameSurname, section});
+                            }
+                        }
+                    } catch (Exception e) {
+                        System.err.println(e);
+                    }
+                    return sectionData;
+                }
+                private class StudentTableModel extends AbstractTableModel {
+
+                    private String[] columnNames = {"Student ID", "Name Surname", "Section"};
+                    private ArrayList<Object[]> data;
+
+                    public StudentTableModel(ArrayList<Object[]> data) {
+                        this.data = data != null ? data : new ArrayList<>();
+                    }
+
+                    public int getColumnCount() {
+                        return columnNames.length;
+                    }
+
+                    public int getRowCount() {
+                        return data.size();
+                    }
+
+                    public Object getValueAt(int row, int col) {
+                        return data.get(row)[col];
+                    }
+
+                    public String getColumnName(int col) {
+                        return columnNames[col];
+                    }
                 }
             }
             //------------------Question Panel---------------------
@@ -204,7 +291,7 @@ public class Frame extends JFrame {
             this.courseInfoPanel = new CourseInfoPanel();
             this.courseNamePanel.setPreferredSize(new Dimension(width/8*7, (height/32)));
             add(this.courseNamePanel, BorderLayout.NORTH);
-            this.courseInfoPanel.setPreferredSize(new Dimension(width/8*7, (height/32*31)));
+            this.courseInfoPanel.setPreferredSize(new Dimension(width/8*7, (height/32*23)));
             add(this.courseInfoPanel, BorderLayout.CENTER);
         }
     }

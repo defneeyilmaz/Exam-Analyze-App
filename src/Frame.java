@@ -124,11 +124,11 @@ public class Frame extends JFrame {
         public LeftPanel(){
             setLayout(new BorderLayout());
             this.userInfoPanel = new UserInfoPanel();
-            this.userInfoPanel.setPreferredSize(new Dimension(width/8, (height/16*2)));
+            this.userInfoPanel.setPreferredSize(new Dimension(width/32*4, (height/16*2)));
             this.courseListPanel = new CourseListPanel();
-            this.courseListPanel.setPreferredSize(new Dimension(width/8, (height/16*8)));
+            this.courseListPanel.setPreferredSize(new Dimension(width/32*4, (height/16*8)));
             this.buttonPanel = new ButtonPanel();
-            this.buttonPanel.setPreferredSize(new Dimension(width/8, (height/16*2)));
+            this.buttonPanel.setPreferredSize(new Dimension(width/32*4, (height/16*2)));
             add(this.userInfoPanel,BorderLayout.NORTH);add(this.courseListPanel,BorderLayout.CENTER);add(this.buttonPanel,BorderLayout.SOUTH);
         }
     }
@@ -158,7 +158,7 @@ public class Frame extends JFrame {
                 public LoPanel() {
                     setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
                     setBorder(BorderFactory.createTitledBorder("Learning Outcomes"));
-                    setPreferredSize(new Dimension(width / 16 * 14, (height/32*9)));
+                    setPreferredSize(new Dimension(width / 32 * 20, (height/32*9)));
                 }
             }
             //------------------ Learning Outcome Panel ---------------------
@@ -167,7 +167,7 @@ public class Frame extends JFrame {
                 public StudentPanel() {
                     setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
                     setBorder(BorderFactory.createTitledBorder("Students"));
-                    setPreferredSize(new Dimension(width / 5, (height/32*14)));
+                    setPreferredSize(new Dimension(width / 32 * 6, height/32*15));
 
                     JTabbedPane tabbedPane = new JTabbedPane();
                     add(tabbedPane, BorderLayout.CENTER);
@@ -192,8 +192,8 @@ public class Frame extends JFrame {
                         table.setAutoCreateRowSorter(true);
 
                         TableColumnModel columnModel = table.getColumnModel();
-                        columnModel.getColumn(0).setPreferredWidth(width / 64 * 4);
-                        columnModel.getColumn(1).setPreferredWidth(width / 64 * 6);
+                        columnModel.getColumn(0).setPreferredWidth(width / 64 * 6);
+                        columnModel.getColumn(1).setPreferredWidth(width / 64 * 8);
                         columnModel.getColumn(2).setPreferredWidth(width / 64 * 2);
 
                         JPanel panel = new JPanel(new BorderLayout());
@@ -254,9 +254,240 @@ public class Frame extends JFrame {
             //------------------Question Panel---------------------
             JPanel questionPanel;
             private class QuestionPanel extends JPanel {
+                JButton addButton;
+                JButton removeButton;
+                JPanel buttonPanel;
+                QuestionTableModel tableModel;
+                JTable table;
+                JScrollPane scrollPane;
+
                 public QuestionPanel() {
+                    tableModel = new QuestionTableModel();
+                    table = new JTable(tableModel);
+                    setPreferredSize(new Dimension(width/32*14,height/32*8));
+                    int tableWidth = width / 32 * 14;
+                    TableColumnModel columnModel = table.getColumnModel();
+                    columnModel.getColumn(0).setPreferredWidth(tableWidth / 28);
+                    columnModel.getColumn(1).setPreferredWidth(tableWidth / 28 * 21);
+                    columnModel.getColumn(2).setPreferredWidth(tableWidth / 28 * 6);
+                    table.setRowHeight(height / 64 * 4);
+                    table.setAutoCreateRowSorter(true);
+
+                    scrollPane = new JScrollPane(table);
+
+                    addButton = new JButton("Add New Question");
+                    removeButton = new JButton("Remove Question");
+                    buttonPanel = new JPanel();
+
+                    buttonPanel.add(addButton); buttonPanel.add(removeButton);
+                    buttonPanel.setLayout(new FlowLayout(FlowLayout.LEFT));
+                    add(scrollPane); add(buttonPanel);
+
+                    addButton.addActionListener(new AddButtonListener());
+
+                    removeButton.addActionListener(e -> {
+                        int selectedRow = table.getSelectedRow();
+                        if (selectedRow != -1) {
+                            int confirm = JOptionPane.showConfirmDialog(this,
+                                    "Are you sure about removing the selected row?",
+                                    "Confirm", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+                            if (confirm == JOptionPane.YES_OPTION) {
+                                tableModel.removeSelectedRow(selectedRow);
+                            }
+                        } else {
+                            JOptionPane.showMessageDialog(this,
+                                    "No row selected to remove.", "Error", JOptionPane.ERROR_MESSAGE);
+                        }
+                    });
+
                     setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
                     setBorder(BorderFactory.createTitledBorder("Questions"));
+                }
+
+                private class AddButtonListener implements ActionListener {
+                    ArrayList<JCheckBox> checkBoxes;
+                    JFrame popUpFrame;
+                    //-------- Panels
+                    JPanel mainPanel;
+                    JPanel inputPanel;
+                    JPanel LOPanel;
+                    JPanel checkBoxPanel;
+                    JPanel questionPanelContainer;
+                    JPanel questionPanel;
+                    JPanel answerPanel;
+                    JPanel buttonPanel;
+                    //-------- Labels
+                    JLabel questionLabel;
+                    JLabel answerLabel;
+                    JLabel LOLabel;
+                    //-------- Buttons
+                    JButton saveButton;
+                    JButton cancelButton;
+
+                    //-------- TextAreas
+                    JTextArea questionArea;
+                    JTextArea answerArea;
+
+                    //-------- ScrollPanes
+                    JScrollPane questionScrollPane;
+                    JScrollPane answerScrollPane;
+
+                    public void actionPerformed(ActionEvent event) {
+                        JFrame mainFrame = (JFrame) SwingUtilities.getWindowAncestor(table);
+                        mainFrame.setEnabled(false);
+
+                        checkBoxes = new ArrayList<>();
+                        popUpFrame = new JFrame("Add New Question");
+                        mainPanel = new JPanel();
+                        inputPanel = new JPanel();
+                        LOPanel = new JPanel();
+                        checkBoxPanel = new JPanel();
+                        questionPanelContainer = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+                        questionPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+                        answerPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+                        buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 10));
+
+                        questionLabel = new JLabel("Question:");
+                        answerLabel = new JLabel("Correct Answer:");
+                        LOLabel = new JLabel("Learning Outcomes:");
+                        saveButton = new JButton("Save");
+                        cancelButton = new JButton("Cancel");
+
+                        questionArea = new JTextArea(5, 30);
+                        answerArea = new JTextArea(5, 30);
+
+                        questionScrollPane = new JScrollPane(questionArea);
+                        answerScrollPane = new JScrollPane(answerArea);
+
+                        popUpFrame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+                        popUpFrame.setSize(720, 405); popUpFrame.setResizable(false);
+
+                        inputPanel.setLayout(new BoxLayout(inputPanel, BoxLayout.Y_AXIS));
+                        questionPanelContainer.setLayout(new FlowLayout(FlowLayout.LEFT));
+                        mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
+
+                        //---------- QuestionPanel
+                        questionLabel.setPreferredSize(new Dimension(120, 30));
+                        questionArea.setLineWrap(true);
+                        questionArea.setWrapStyleWord(true);
+                        questionScrollPane.setPreferredSize(new Dimension(400, 150));
+                        questionPanel.add(questionLabel);
+                        questionPanel.add(questionScrollPane);
+
+                        //---------- AnswerPanel
+                        answerLabel.setPreferredSize(new Dimension(120, 30));
+                        answerArea.setLineWrap(true);
+                        answerArea.setWrapStyleWord(true);
+                        answerScrollPane.setPreferredSize(new Dimension(400, 150));
+                        answerPanel.add(answerLabel);
+                        answerPanel.add(answerScrollPane);
+
+                        //---------- CheckBoxLOPanel
+                        LOPanel.setLayout(new BoxLayout(LOPanel, BoxLayout.Y_AXIS));
+                        LOPanel.add(LOLabel);
+                        LOPanel.add(checkBoxPanel);
+                        checkBoxPanel.setLayout(new GridLayout(0, 1));
+                        //TODO derse göre oluştur
+                        addCheckBox(3);
+
+
+                        buttonPanel.add(saveButton);
+                        buttonPanel.add(cancelButton);
+                        inputPanel.add(questionPanel);
+                        inputPanel.add(answerPanel);
+                        questionPanelContainer.add(inputPanel);
+                        questionPanelContainer.add(LOPanel);
+                        mainPanel.add(questionPanelContainer);
+                        mainPanel.add(buttonPanel);
+
+                        //------- Button Listeners
+                        saveButton.addActionListener(new ActionListener() {
+                            @Override
+                            public void actionPerformed(ActionEvent e) {
+                                String question = questionArea.getText();
+                                String correctAnswer = answerArea.getText();
+                                String LOs = getSelectedCheckBoxes();
+                                if (question.isEmpty() || correctAnswer.isEmpty() || LOs.isEmpty()) {
+                                    JOptionPane.showMessageDialog(popUpFrame, "Please fill all fields!", "Error", JOptionPane.ERROR_MESSAGE);
+                                } else {
+                                    tableModel.addRow(new Object[]{tableModel.getRowCount() + 1, question, LOs});
+                                    JOptionPane.showMessageDialog(popUpFrame, "Question saved successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
+                                    mainFrame.setEnabled(true);
+                                    popUpFrame.dispose();
+                                }
+                            }
+                        });
+
+                        cancelButton.addActionListener(new ActionListener() {
+                            @Override
+                            public void actionPerformed(ActionEvent e) {
+                                mainFrame.setEnabled(true);
+                                popUpFrame.dispose();
+                            }
+                        });
+                        popUpFrame.setLocation(width/4,height/4);
+                        popUpFrame.add(mainPanel);
+                        popUpFrame.setVisible(true);
+                    }
+
+                    private void addCheckBox(int LOCount) {
+                        checkBoxPanel.removeAll();
+                        for (int i = 0; i < LOCount; i++) {
+                            JCheckBox temp = new JCheckBox("LO" + (i + 1));
+                            checkBoxes.add(temp);
+                            checkBoxPanel.add(temp);
+                        }
+                    }
+
+                    private String getSelectedCheckBoxes() {
+                        StringBuilder LOs = new StringBuilder();
+                        for (JCheckBox checkBox : checkBoxes) {
+                            if (checkBox.isSelected()) {
+                                LOs.append(checkBox.getText() + ",");
+                            }
+                        }
+                        if (LOs.isEmpty()) return "";
+                        return LOs.replace(LOs.length() - 1, LOs.length(), "").toString();
+                    }
+                }
+
+                private class QuestionTableModel extends AbstractTableModel {
+
+                    private String[] columnNames = {"#", "Question", "Learning Outcomes"};
+                    //private Object[][] data = {{"1","Selam ","LO1"}};
+                    private ArrayList<Object[]> data = new ArrayList<>();
+
+                    public int getColumnCount() {
+                        return columnNames.length;
+                    }
+
+                    public int getRowCount() {
+                        return data.size();
+                    }
+
+                    public Object getValueAt(int row, int col) {
+                        return data.get(row)[col];
+                    }
+
+                    public String getColumnName(int col) {
+                        return columnNames[col];
+                    }
+
+                    public void addRow(Object[] rowData) {
+                        data.add(rowData);
+                        fireTableRowsInserted(data.size() - 1, data.size() - 1);
+                    }
+
+                    public void removeSelectedRow(int row) {
+                        if (row >= 0 && row < data.size()) {
+                            data.remove(row);
+                            fireTableRowsDeleted(row, row);
+                            for (int i = row; i < data.size(); i++) {
+                                data.get(i)[0] = i + 1;
+                            }
+                            fireTableDataChanged();
+                        }
+                    }
                 }
             }
             //------------------Exam Panel---------------------
@@ -289,9 +520,9 @@ public class Frame extends JFrame {
             this.courseNamePanel = new CourseNamePanel();
             this.courseNamePanel.add(this.courseNamePanel.courseNameLabel);
             this.courseInfoPanel = new CourseInfoPanel();
-            this.courseNamePanel.setPreferredSize(new Dimension(width/8*7, (height/32)));
+            this.courseNamePanel.setPreferredSize(new Dimension(width/32*20, (height/32)));
             add(this.courseNamePanel, BorderLayout.NORTH);
-            this.courseInfoPanel.setPreferredSize(new Dimension(width/8*7, (height/32*23)));
+            this.courseInfoPanel.setPreferredSize(new Dimension(width/32*20, (height/32*15)));
             add(this.courseInfoPanel, BorderLayout.CENTER);
         }
     }

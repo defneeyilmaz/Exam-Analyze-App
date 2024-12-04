@@ -146,49 +146,53 @@ public class Frame extends JFrame {
         //------------------Course Information Panel---------------------
         CourseInfoPanel courseInfoPanel;
         private class CourseInfoPanel extends JPanel {
-            JPanel loPanel;
-            JPanel studentPanel;
+            //------------------Learning Outcome Panel---------------------
+            LoPanel loPanel;
+            private class LoPanel extends JPanel {
+                public LoPanel() {
+                    setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
+                    setBorder(BorderFactory.createTitledBorder("Learning Outcomes"));
+                    setPreferredSize(new Dimension(width / 16 * 14, (height / 3)));
+                }
+            }
+            //------------------Learning Outcome Panel---------------------
+            StudentPanel studentPanel;
+            private class StudentPanel extends JPanel {
+                public StudentPanel() {
+                    setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
+                    setBorder(BorderFactory.createTitledBorder("Students"));
+                    setPreferredSize(new Dimension(width / 5, (height / 4)));
+                }
+            }
+            //------------------Question Panel---------------------
             JPanel questionPanel;
+            private class QuestionPanel extends JPanel {
+                public QuestionPanel() {
+                    setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
+                    setBorder(BorderFactory.createTitledBorder("Questions"));
+                }
+            }
+            //------------------Exam Panel---------------------
             JPanel examPanel;
+            private class ExamPanel extends JPanel {
+                public ExamPanel() {
+                    setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
+                    setBorder(BorderFactory.createTitledBorder("Exams"));
+                }
+            }
 
             public CourseInfoPanel() {
-                this.loPanel = new JPanel();
-                this.studentPanel = new JPanel();
-                this.questionPanel = new JPanel();
-                this.examPanel = new JPanel();
-
+                this.loPanel = new LoPanel();
+                this.studentPanel = new StudentPanel();
+                this.examPanel = new ExamPanel();
+                this.questionPanel = new QuestionPanel();
                 setLayout(new BorderLayout());
-
-                this.loPanel.setLayout(new BoxLayout(this.loPanel, BoxLayout.Y_AXIS));
-                this.loPanel.setBorder(BorderFactory.createTitledBorder("Learning Outcomes"));
-                this.loPanel.add(new JLabel("LO1"));
-                this.loPanel.add(new JLabel("LO2"));
-
-                this.loPanel.setPreferredSize(new Dimension(width/16*14, (height/3)));
                 add(this.loPanel, BorderLayout.NORTH);
-
-                this.studentPanel.setLayout(new BoxLayout(this.studentPanel, BoxLayout.Y_AXIS));
-                this.studentPanel.setBorder(BorderFactory.createTitledBorder("Students"));
-                this.studentPanel.add(new JLabel("Section 1: Hüs"));
-                this.studentPanel.add(new JLabel("Section 2: Def"));
-                this.studentPanel.setPreferredSize(new Dimension(width/5, (height/4)));
                 add(this.studentPanel, BorderLayout.EAST);
-
-                this.questionPanel.setLayout(new BoxLayout(this.questionPanel, BoxLayout.Y_AXIS));
-                this.questionPanel.setBorder(BorderFactory.createTitledBorder("Questions"));
-                this.questionPanel.add(new JLabel("Q1"));
-                this.questionPanel.add(new JLabel("Q2"));
-
-                this.examPanel.setLayout(new BoxLayout(this.examPanel, BoxLayout.Y_AXIS));
-                this.examPanel.setBorder(BorderFactory.createTitledBorder("Exams"));
-                this.examPanel.add(new JLabel("Exam 1"));
-                this.examPanel.add(new JLabel("Exam 2"));
-
                 JPanel leftColumn = new JPanel();
-                leftColumn.setLayout(new GridLayout(0,1));
+                leftColumn.setLayout(new GridLayout(0, 1));
                 leftColumn.add(this.questionPanel);
                 leftColumn.add(this.examPanel);
-
                 add(leftColumn, BorderLayout.CENTER);
             }
         }

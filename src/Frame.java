@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.Scanner;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
+import javax.swing.filechooser.FileFilter;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableColumnModel;
 
@@ -17,26 +18,28 @@ public class Frame extends JFrame {
     int width = screenSize.width;
     int height = screenSize.height;
     //------------------Left Panel---------------------
-    LeftPanel leftPanel ;
-    private class LeftPanel extends JPanel{
+    LeftPanel leftPanel;
+
+    private class LeftPanel extends JPanel {
         //------------------User Information Panel---------------------
         UserInfoPanel userInfoPanel;
-        private class UserInfoPanel extends JPanel{
+
+        private class UserInfoPanel extends JPanel {
             JPanel userNamePanel;
             JLabel userNameLabel;
             JLabel userName;
             JLabel department;
 
-            public UserInfoPanel(){
+            public UserInfoPanel() {
                 this.userNamePanel = new JPanel();
                 this.userNameLabel = new JLabel("     Username:");
                 this.userName = new JLabel("Ufuk Çelikkan");
                 this.department = new JLabel("       Software Engineering");
-                setLayout(new GridLayout(0,1));
+                setLayout(new GridLayout(0, 1));
                 add(this.userNamePanel);
                 this.userNamePanel.add(this.userNameLabel);
                 this.userNamePanel.add(this.userName);
-                this.userNamePanel.setLayout(new GridLayout(0,2));
+                this.userNamePanel.setLayout(new GridLayout(0, 2));
 
                 setBorder(BorderFactory.createTitledBorder("User"));
                 this.department.setFont(this.department.getFont().deriveFont(Font.BOLD));
@@ -44,51 +47,55 @@ public class Frame extends JFrame {
                 setBorder(BorderFactory.createTitledBorder(""));
             }
         }
+
         //------------------Course List Panel---------------------
         CourseListPanel courseListPanel;
-        private class CourseListPanel extends JPanel{
+
+        private class CourseListPanel extends JPanel {
             DefaultListModel<String> listModel;
             JList<String> list;
             JScrollPane scrollPane;
 
-            public CourseListPanel(){
+            public CourseListPanel() {
                 this.listModel = new DefaultListModel<>();
                 this.list = new JList<>(this.listModel);
                 this.scrollPane = new JScrollPane(this.list);
 
                 this.list.setFixedCellHeight(75);
-                this.list.setFixedCellWidth(width/10);
+                this.list.setFixedCellWidth(width / 10);
                 this.list.setVisibleRowCount(5);
 
                 this.scrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
                 setLayout(new BorderLayout());
-                add(this.scrollPane,BorderLayout.CENTER);
+                add(this.scrollPane, BorderLayout.CENTER);
                 setBorder(BorderFactory.createTitledBorder(""));
             }
         }
+
         //------------------Button Panel---------------------
         ButtonPanel buttonPanel;
-        private class ButtonPanel extends JPanel{
+
+        private class ButtonPanel extends JPanel {
             JButton addButton;
             JButton removeButton;
 
-            public ButtonPanel(){
+            public ButtonPanel() {
                 this.addButton = new JButton("Add Course");
                 this.removeButton = new JButton("Remove Chosen Course");
 
-                setLayout(new GridLayout(0,1));
+                setLayout(new GridLayout(0, 1));
                 add(this.addButton);
                 add(this.removeButton);
                 setBorder(BorderFactory.createTitledBorder(""));
 
                 this.addButton.addActionListener(new ActionListener() {
                     final String[] SECourses = new String[]{"SE323", "SE321", "SE311", "SE375", "SE216",
-                            "SE209","SE322"};
+                            "SE209", "SE322"};
 
                     @Override
                     public void actionPerformed(ActionEvent e) {
                         Object selectedCourse = JOptionPane.showInputDialog(null,
-                                "Choose the course to add","Add Course",JOptionPane.QUESTION_MESSAGE,
+                                "Choose the course to add", "Add Course", JOptionPane.QUESTION_MESSAGE,
                                 null, this.SECourses, this.SECourses[0]);
                         if (!courseListPanel.listModel.contains(selectedCourse)) {
                             courseListPanel.listModel.addElement(selectedCourse.toString());
@@ -121,22 +128,28 @@ public class Frame extends JFrame {
                 });
             }
         }
-        public LeftPanel(){
+
+        public LeftPanel() {
             setLayout(new BorderLayout());
             this.userInfoPanel = new UserInfoPanel();
-            this.userInfoPanel.setPreferredSize(new Dimension(width/32*4, (height/16*2)));
+            this.userInfoPanel.setPreferredSize(new Dimension(width / 32 * 4, (height / 16 * 2)));
             this.courseListPanel = new CourseListPanel();
-            this.courseListPanel.setPreferredSize(new Dimension(width/32*4, (height/16*8)));
+            this.courseListPanel.setPreferredSize(new Dimension(width / 32 * 4, (height / 16 * 8)));
             this.buttonPanel = new ButtonPanel();
-            this.buttonPanel.setPreferredSize(new Dimension(width/32*4, (height/16*2)));
-            add(this.userInfoPanel,BorderLayout.NORTH);add(this.courseListPanel,BorderLayout.CENTER);add(this.buttonPanel,BorderLayout.SOUTH);
+            this.buttonPanel.setPreferredSize(new Dimension(width / 32 * 4, (height / 16 * 2)));
+            add(this.userInfoPanel, BorderLayout.NORTH);
+            add(this.courseListPanel, BorderLayout.CENTER);
+            add(this.buttonPanel, BorderLayout.SOUTH);
         }
     }
+
     //------------------Right Panel---------------------
-    RightPanel rightPanel ;
+    RightPanel rightPanel;
+
     private class RightPanel extends JPanel {
         //------------------Course Name Panel---------------------
         CourseNamePanel courseNamePanel;
+
         private class CourseNamePanel extends JPanel {
             JLabel courseNameLabel;
 
@@ -149,66 +162,221 @@ public class Frame extends JFrame {
                 courseNameLabel.setText("Course Name: " + courseName);
             }
         }
+
         //------------------Course Information Panel---------------------
         CourseInfoPanel courseInfoPanel;
+
         private class CourseInfoPanel extends JPanel {
             //------------------Learning Outcome Panel---------------------
             LoPanel loPanel;
+
             private class LoPanel extends JPanel {
                 public LoPanel() {
                     setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
                     setBorder(BorderFactory.createTitledBorder("Learning Outcomes"));
-                    setPreferredSize(new Dimension(width / 32 * 20, (height/32*9)));
+                    setPreferredSize(new Dimension(width / 32 * 20, (height / 32 * 9)));
                 }
             }
+
             //------------------ Learning Outcome Panel ---------------------
             StudentPanel studentPanel;
+
             private class StudentPanel extends JPanel {
+                JTabbedPane tabbedPane;
+                ArrayList<JTable> tables = new ArrayList<>();
+                ArrayList<StudentTableModel> tableModels = new ArrayList<>();
                 public StudentPanel() {
                     setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
                     setBorder(BorderFactory.createTitledBorder("Students"));
-                    setPreferredSize(new Dimension(width / 32 * 6, height/32*15));
+                    setPreferredSize(new Dimension(width / 32 * 6, height / 32 * 15));
 
-                    JTabbedPane tabbedPane = new JTabbedPane();
+                    tabbedPane = new JTabbedPane();
                     add(tabbedPane, BorderLayout.CENTER);
 
                     JPanel buttonPanel = new JPanel(); //---- Button Panel
                     add(buttonPanel, BorderLayout.SOUTH);
-                    buttonPanel.setLayout(new FlowLayout(FlowLayout.CENTER, 10, 10));
+                    buttonPanel.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 10));
 
-                    JButton addButton = new JButton("Add");
-                    JButton removeButton = new JButton("Remove");
+                    JButton addButton = new JButton(" + ");
+                    addButton.setEnabled(false);
+                    JButton removeButton = new JButton(" x ");
+                    removeButton.setEnabled(false);
                     JButton seeButton = new JButton("See");
-                    buttonPanel.add(addButton); buttonPanel.add(removeButton); buttonPanel.add(seeButton);
+                    seeButton.setEnabled(false);
+                    JButton addAllStudentsButton = new JButton("Add From csv File");
+                    buttonPanel.add(addButton);
+                    buttonPanel.add(removeButton);
+                    buttonPanel.add(seeButton);
+                    buttonPanel.add(addAllStudentsButton);
 
-                    HashMap<String, ArrayList<Object[]>> sectionData = readStudentsFromCSV();
+                    addAllStudentsButton.addActionListener(e -> {
 
-                    for (String section : sectionData.keySet()) {
-                        StudentTableModel tableModel = new StudentTableModel(sectionData.get(section));
-                        JTable table = new JTable(tableModel);
-                        JScrollPane scrollPane = new JScrollPane(table);
+                        JFrame popUpFrame = new JFrame("Add Students");
 
-                        table.setRowHeight(height / 16);
-                        table.setAutoCreateRowSorter(true);
+                        popUpFrame.setSize(300, 200);
 
-                        TableColumnModel columnModel = table.getColumnModel();
-                        columnModel.getColumn(0).setPreferredWidth(width / 64 * 6);
-                        columnModel.getColumn(1).setPreferredWidth(width / 64 * 8);
-                        columnModel.getColumn(2).setPreferredWidth(width / 64 * 2);
+                        JPanel container = new JPanel();
+                        JButton fileSelector = new JButton("Select CSV File");
+                        JButton cancel = new JButton("Cancel");
+                        container.add(fileSelector);
+                        container.add(cancel);
+                        container.setLayout(new FlowLayout(FlowLayout.LEFT));
 
-                        JPanel panel = new JPanel(new BorderLayout());
-                        panel.add(scrollPane, BorderLayout.CENTER);
+                        JLabel info = new JLabel("Please choose only \nUTF-8 formatted .csv files.");
 
-                        tabbedPane.addTab("Section " + section, panel);
-                    }
+                        popUpFrame.add(info);
+                        popUpFrame.add(container);
+                        popUpFrame.setLayout(new GridLayout(2, 0));
+
+                        popUpFrame.setLocationRelativeTo(null);
+                        popUpFrame.setVisible(true);
+                        popUpFrame.setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
+
+                        fileSelector.addActionListener(u -> {
+                            JFileChooser fileChooser = new JFileChooser();
+
+                            fileChooser.setFileFilter(new FileFilter() {
+                                @Override
+                                public boolean accept(File file) {
+                                    return file.isDirectory() || file.getName().toLowerCase().endsWith(".csv");
+                                }
+
+                                @Override
+                                public String getDescription() {
+                                    return "CSV Files (*.csv)";
+                                }
+                            });
+                            int result = fileChooser.showOpenDialog(popUpFrame);
+
+                            if (result == JFileChooser.APPROVE_OPTION) {
+                                File selectedFile = fileChooser.getSelectedFile();
+                                JOptionPane.showMessageDialog(popUpFrame, "Selected File: " + selectedFile.getAbsolutePath());
+                                HashMap<String, ArrayList<Object[]>> sectionData = readStudentsFromCSV(selectedFile.getAbsolutePath());
+
+                                for (String section : sectionData.keySet()) {
+                                    addNewTab(sectionData.get(section), section);
+                                }
+                                addButton.setEnabled(true);
+                                removeButton.setEnabled(true);
+                                seeButton.setEnabled(true);
+                                popUpFrame.dispose();
+                            } else {
+                                JOptionPane.showMessageDialog(popUpFrame, "No file selected.");
+                                popUpFrame.dispose();
+                            }
+                        });
+                        cancel.addActionListener(a -> {
+                            popUpFrame.dispose();
+                        });
+                    });
+                    addButton.addActionListener(e -> {
+                        JFrame popUpFrame = new JFrame("Add Student");
+
+                        popUpFrame.setSize(250, 150);
+                        popUpFrame.setLayout(new GridLayout(4, 2));
+                        popUpFrame.setLocationRelativeTo(null);
+                        popUpFrame.setVisible(true);
+                        popUpFrame.setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
+
+                        JLabel idLabel = new JLabel("Student ID:");
+                        JTextField idField = new JTextField();
+
+                        JLabel nameLabel = new JLabel("Student Name:");
+                        JTextField nameField = new JTextField();
+
+                        JLabel sectionLabel = new JLabel("Section:");
+                        JTextField sectionField = new JTextField();
+
+                        JButton addStudentButton = new JButton("Add Student");
+                        JButton cancelButton = new JButton("Cancel");
+
+                        popUpFrame.add(idLabel);
+                        popUpFrame.add(idField);
+                        popUpFrame.add(nameLabel);
+                        popUpFrame.add(nameField);
+                        popUpFrame.add(sectionLabel);
+                        popUpFrame.add(sectionField);
+                        popUpFrame.add(addStudentButton);
+                        popUpFrame.add(cancelButton);
+
+                        addStudentButton.addActionListener(u -> {
+                            String schoolID;
+                            while(true) {
+                                schoolID = idField.getText().matches("^[1-9]\\d{10}$") ? idField.getText() : "";
+                                if (schoolID.isEmpty()) {
+                                    JOptionPane.showMessageDialog(popUpFrame, "Correctly input the ID");
+                                    idField.setText("");
+                                    continue;
+                                }
+                                break;
+                            }
+                            String nameSurname = nameField.getText();
+                            String section = sectionField.getText();
+                            addNewStudent(schoolID,nameSurname,section);
+                            popUpFrame.dispose();
+                        });
+                        cancelButton.addActionListener(a -> {
+                            popUpFrame.dispose();
+                        });
+                    });
+                    removeButton.addActionListener(e -> {
+                        int selectedIndex = tabbedPane.getSelectedIndex();
+                        StudentTableModel tempModel = tableModels.get(selectedIndex);
+                        JTable tempTable = tables.get(selectedIndex);
+                        int selectedRow = tempTable.getSelectedRow();
+                        if (selectedRow != -1) {
+                            int confirm = JOptionPane.showConfirmDialog(this,
+                                    "Are you sure about removing the selected row?",
+                                    "Confirm", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+                            if (confirm == JOptionPane.YES_OPTION) {
+                                tempModel.removeSelectedRow(selectedRow);
+                            }
+                        } else {
+                            JOptionPane.showMessageDialog(this,
+                                    "No row selected to remove.", "Error", JOptionPane.ERROR_MESSAGE);
+                        }
+                    });
                 }
-                private HashMap<String, ArrayList<Object[]>> readStudentsFromCSV() {
+                private void addNewStudent(String ID, String name, String section){
+                    if (tableModels.size()>=Integer.parseInt(section)) {
+                        String tab = tabbedPane.getTitleAt(Integer.parseInt(section) - 1);
+                        String tabSection = tab.split(" ")[1];
+                        StudentTableModel temp = tableModels.get(Integer.parseInt(tabSection)-1);
+                        temp.addRow(new Object[]{ID, name, section});
+                    }else{
+                        ArrayList<Object[]> temp = new ArrayList<>();
+                        temp.add(new Object[]{ID, name, section});
+                        addNewTab(temp,section);
+                    }
+
+                }
+                private void addNewTab(ArrayList<Object[]> sectionData, String section) {
+                    StudentTableModel tableModel = new StudentTableModel(sectionData);
+                    JTable table = new JTable(tableModel);
+                    JScrollPane scrollPane = new JScrollPane(table);
+                    tableModels.add(tableModel);
+                    tables.add(table);
+                    table.setRowHeight(height / 16);
+                    table.setAutoCreateRowSorter(true);
+
+                    TableColumnModel columnModel = table.getColumnModel();
+                    columnModel.getColumn(0).setPreferredWidth(width / 64 * 4);
+                    columnModel.getColumn(1).setPreferredWidth(width / 64 * 5);
+                    columnModel.getColumn(2).setPreferredWidth(width / 64 * 3);
+
+                    JPanel panel = new JPanel(new BorderLayout());
+                    panel.add(scrollPane, BorderLayout.CENTER);
+
+                    tabbedPane.addTab("Section " + section, panel);
+                }
+
+                private HashMap<String, ArrayList<Object[]>> readStudentsFromCSV(String absolutePath) {
                     HashMap<String, ArrayList<Object[]>> sectionData = new HashMap<>();
                     Scanner sc;
                     try {
 
                         sc = new Scanner(new File("students.csv"), "UTF-8");
-                        System.out.println(sc.hasNextLine());
+                        // System.out.println(sc.hasNextLine());
                         while (sc.hasNextLine()) {
                             String[] line = sc.nextLine().split(",");
                             if (line[0].trim().replace(" ", "").matches("^[1-9]\\d{10}$")) {
@@ -225,6 +393,7 @@ public class Frame extends JFrame {
                     }
                     return sectionData;
                 }
+
                 private class StudentTableModel extends AbstractTableModel {
 
                     private String[] columnNames = {"Student ID", "Name Surname", "Section"};
@@ -249,10 +418,24 @@ public class Frame extends JFrame {
                     public String getColumnName(int col) {
                         return columnNames[col];
                     }
+                    public void addRow(Object[] rowData) {
+                        data.add(rowData);
+                        fireTableRowsInserted(data.size() - 1, data.size() - 1);
+                    }
+
+                    public void removeSelectedRow(int row) {
+                        if (row >= 0 && row < data.size()) {
+                            data.remove(row);
+                            fireTableRowsDeleted(row, row);
+                            fireTableDataChanged();
+                        }
+                    }
                 }
             }
+
             //------------------Question Panel---------------------
             JPanel questionPanel;
+
             private class QuestionPanel extends JPanel {
                 JButton addButton;
                 JButton removeButton;
@@ -264,7 +447,7 @@ public class Frame extends JFrame {
                 public QuestionPanel() {
                     tableModel = new QuestionTableModel();
                     table = new JTable(tableModel);
-                    setPreferredSize(new Dimension(width/32*14,height/32*8));
+                    setPreferredSize(new Dimension(width / 32 * 14, height / 32 * 8));
                     int tableWidth = width / 32 * 14;
                     TableColumnModel columnModel = table.getColumnModel();
                     columnModel.getColumn(0).setPreferredWidth(tableWidth / 28);
@@ -279,9 +462,11 @@ public class Frame extends JFrame {
                     removeButton = new JButton("Remove Question");
                     buttonPanel = new JPanel();
 
-                    buttonPanel.add(addButton); buttonPanel.add(removeButton);
+                    buttonPanel.add(addButton);
+                    buttonPanel.add(removeButton);
                     buttonPanel.setLayout(new FlowLayout(FlowLayout.LEFT));
-                    add(scrollPane); add(buttonPanel);
+                    add(scrollPane);
+                    add(buttonPanel);
 
                     addButton.addActionListener(new AddButtonListener());
 
@@ -360,7 +545,8 @@ public class Frame extends JFrame {
                         answerScrollPane = new JScrollPane(answerArea);
 
                         popUpFrame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
-                        popUpFrame.setSize(720, 405); popUpFrame.setResizable(false);
+                        popUpFrame.setSize(720, 405);
+                        popUpFrame.setResizable(false);
 
                         inputPanel.setLayout(new BoxLayout(inputPanel, BoxLayout.Y_AXIS));
                         questionPanelContainer.setLayout(new FlowLayout(FlowLayout.LEFT));
@@ -425,7 +611,7 @@ public class Frame extends JFrame {
                                 popUpFrame.dispose();
                             }
                         });
-                        popUpFrame.setLocation(width/4,height/4);
+                        popUpFrame.setLocation(width / 4, height / 4);
                         popUpFrame.add(mainPanel);
                         popUpFrame.setVisible(true);
                     }
@@ -490,8 +676,10 @@ public class Frame extends JFrame {
                     }
                 }
             }
+
             //------------------Exam Panel---------------------
             JPanel examPanel;
+
             private class ExamPanel extends JPanel {
                 public ExamPanel() {
                     setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
@@ -515,31 +703,32 @@ public class Frame extends JFrame {
             }
         }
 
-        public RightPanel(){
+        public RightPanel() {
             setLayout(new BorderLayout());
             this.courseNamePanel = new CourseNamePanel();
             this.courseNamePanel.add(this.courseNamePanel.courseNameLabel);
             this.courseInfoPanel = new CourseInfoPanel();
-            this.courseNamePanel.setPreferredSize(new Dimension(width/32*20, (height/32)));
+            this.courseNamePanel.setPreferredSize(new Dimension(width / 32 * 20, (height / 32)));
             add(this.courseNamePanel, BorderLayout.NORTH);
-            this.courseInfoPanel.setPreferredSize(new Dimension(width/32*20, (height/32*15)));
+            this.courseInfoPanel.setPreferredSize(new Dimension(width / 32 * 20, (height / 32 * 15)));
             add(this.courseInfoPanel, BorderLayout.CENTER);
         }
     }
 
-    public Frame(){
+    public Frame() {
         this.leftPanel = new LeftPanel();
         this.rightPanel = new RightPanel();
         add(this.leftPanel, BorderLayout.WEST);
         add(this.rightPanel, BorderLayout.CENTER);
         this.rightPanel.setVisible(false);
 
-        setSize(width/4*3, height/4*3);
-        setLocation(width/8,height/8);
+        setSize(width / 4 * 3, height / 4 * 3);
+        setLocation(width / 8, height / 8);
         setVisible(true);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
     }
 }
+
 class Test {
     public static void main(String[] args) {
         Frame frame = new Frame();

@@ -17,6 +17,140 @@ public class Frame extends JFrame {
     Dimension screenSize = kit.getScreenSize();
     int width = screenSize.width;
     int height = screenSize.height;
+    //------------------Login Panel---------------------
+    LoginSignupPanel loginSignupPanel;
+    public class LoginSignupPanel extends JPanel {
+        LoginScreen loginScreen;
+        Boolean success = false;
+        private class LoginScreen extends JPanel {
+            JTextField usernameField;
+            JPasswordField passwordField;
+            JButton loginButton, signUpButton;
+
+            public LoginScreen() {
+                setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
+                setBorder(BorderFactory.createEmptyBorder(50, 50, 50, 50));
+
+                JLabel titleLabel = new JLabel("Login");
+                titleLabel.setFont(new Font("Arial", Font.BOLD, 20));
+                titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+                JPanel inputPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 5));
+                JLabel usernameLabel = new JLabel("Username:");
+                this.usernameField = new JTextField(10);
+                JLabel passwordLabel = new JLabel("Password:");
+                this.passwordField = new JPasswordField(10);
+
+                inputPanel.add(usernameLabel);
+                inputPanel.add(this.usernameField);
+                inputPanel.add(passwordLabel);
+                inputPanel.add(this.passwordField);
+
+                // Buttons
+                this.loginButton = new JButton("Login");
+                this.loginButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+                this.signUpButton = new JButton("Sign Up");
+                this.signUpButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+                // Button Listeners
+                this.loginButton.addActionListener(e -> {
+                    String username = usernameField.getText();
+                    String password = new String(passwordField.getPassword());
+                    if (username.equals("admin") && password.equals("1234")) {
+                        JOptionPane.showMessageDialog(this, "Login Successful!");
+                        this.removeAll();
+                        success = true;
+                    } else {
+                        JOptionPane.showMessageDialog(this, "No account found. Please sign up.");
+                    }
+                });
+
+                this.signUpButton.addActionListener(e -> {
+                    removeAll();
+                    add(new SignupScreen());
+                    revalidate();
+                    repaint();
+                });
+                add(Box.createVerticalGlue());
+                add(Box.createVerticalGlue());
+                add(Box.createVerticalGlue());
+                add(titleLabel);
+                add(Box.createVerticalStrut(20));
+                add(inputPanel);
+                add(Box.createVerticalStrut(20));
+                add(this.loginButton);
+                add(Box.createVerticalStrut(10));
+                add(this.signUpButton);
+                add(Box.createVerticalGlue());
+                add(Box.createVerticalGlue());
+                add(Box.createVerticalGlue());
+            }
+        }
+
+        SignupScreen signupScreen;
+
+        private class SignupScreen extends JPanel {
+            JTextField usernameField;
+            JPasswordField passwordField, confirmPasswordField;
+            JButton signupButton;
+
+            public SignupScreen() {
+                setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
+                setBorder(BorderFactory.createEmptyBorder(50, 50, 50, 50));
+
+                JLabel titleLabel = new JLabel("Sign Up");
+                titleLabel.setFont(new Font("Arial", Font.BOLD, 20));
+                titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+                // Input Fields
+                JPanel inputPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 5));
+                JLabel usernameLabel = new JLabel("Username:");
+                usernameField = new JTextField(10);
+                JLabel passwordLabel = new JLabel("Password:");
+                passwordField = new JPasswordField(10);
+                JLabel confirmLabel = new JLabel("Confirm:");
+                confirmPasswordField = new JPasswordField(10);
+
+                inputPanel.add(usernameLabel);
+                inputPanel.add(usernameField);
+                inputPanel.add(passwordLabel);
+                inputPanel.add(passwordField);
+                inputPanel.add(confirmLabel);
+                inputPanel.add(confirmPasswordField);
+
+                // Signup Button
+                signupButton = new JButton("Sign Up");
+                signupButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+                signupButton.addActionListener(e -> {
+                    JOptionPane.showMessageDialog(this, "Account created! Please log in.");
+                    removeAll();
+                    add(new LoginScreen());
+                    revalidate();
+                    repaint();
+                });
+
+                // Add Components
+                add(Box.createVerticalGlue());
+                add(Box.createVerticalGlue());
+                add(Box.createVerticalGlue());
+                add(titleLabel);
+                add(Box.createVerticalStrut(20));
+                add(inputPanel);
+                add(Box.createVerticalStrut(20));
+                add(this.signupButton);
+                add(Box.createVerticalStrut(10));
+                add(Box.createVerticalGlue());
+                add(Box.createVerticalGlue());
+                add(Box.createVerticalGlue());
+            }
+        }
+
+        public LoginSignupPanel() {
+            this.loginScreen = new LoginScreen();
+            setLayout(new BorderLayout());
+            add(this.loginScreen, BorderLayout.CENTER);
+        }
+    }
     //------------------Left Panel---------------------
     LeftPanel leftPanel;
 
@@ -213,14 +347,14 @@ public class Frame extends JFrame {
 
                         JFrame popUpFrame = new JFrame("Add Students");
 
-                        popUpFrame.setSize(285, 150);
+                        popUpFrame.setSize(300, 200);
 
                         JPanel container = new JPanel();
                         JButton fileSelector = new JButton("Select CSV File");
                         JButton cancel = new JButton("Cancel");
                         container.add(fileSelector);
                         container.add(cancel);
-                        container.setLayout(new FlowLayout(FlowLayout.CENTER));
+                        container.setLayout(new FlowLayout(FlowLayout.LEFT));
 
                         JLabel info = new JLabel("Please choose only \nUTF-8 formatted .csv files.");
 
@@ -369,6 +503,7 @@ public class Frame extends JFrame {
 
                     tabbedPane.addTab("Section " + section, panel);
                 }
+
                 private HashMap<String, ArrayList<Object[]>> readStudentsFromCSV(String absolutePath) {
                     HashMap<String, ArrayList<Object[]>> sectionData = new HashMap<>();
                     Scanner sc;
@@ -715,16 +850,34 @@ public class Frame extends JFrame {
     }
 
     public Frame() {
-        this.leftPanel = new LeftPanel();
-        this.rightPanel = new RightPanel();
-        add(this.leftPanel, BorderLayout.WEST);
-        add(this.rightPanel, BorderLayout.CENTER);
-        this.rightPanel.setVisible(false);
+        this.loginSignupPanel = new LoginSignupPanel();
+        add(this.loginSignupPanel, BorderLayout.CENTER);
+
+        Timer timer = new Timer(100, e -> {
+            if (loginSignupPanel.success) {
+                ((Timer) e.getSource()).stop(); // Stop the timer
+                proceedToMainUI(); // Load the main UI
+            }
+        });
+        timer.start();
 
         setSize(width / 4 * 3, height / 4 * 3);
         setLocation(width / 8, height / 8);
         setVisible(true);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+    }
+
+    public void proceedToMainUI(){
+        getContentPane().remove(loginSignupPanel);
+        this.leftPanel = new LeftPanel();
+        this.rightPanel = new RightPanel();
+
+        add(this.leftPanel, BorderLayout.WEST);
+        add(this.rightPanel, BorderLayout.CENTER);
+        this.rightPanel.setVisible(false);
+
+        revalidate();
+        repaint();
     }
 }
 

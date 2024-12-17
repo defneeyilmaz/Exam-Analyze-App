@@ -213,14 +213,14 @@ public class Frame extends JFrame {
 
                         JFrame popUpFrame = new JFrame("Add Students");
 
-                        popUpFrame.setSize(300, 200);
+                        popUpFrame.setSize(285, 150);
 
                         JPanel container = new JPanel();
                         JButton fileSelector = new JButton("Select CSV File");
                         JButton cancel = new JButton("Cancel");
                         container.add(fileSelector);
                         container.add(cancel);
-                        container.setLayout(new FlowLayout(FlowLayout.LEFT));
+                        container.setLayout(new FlowLayout(FlowLayout.CENTER));
 
                         JLabel info = new JLabel("Please choose only \nUTF-8 formatted .csv files.");
 
@@ -369,7 +369,6 @@ public class Frame extends JFrame {
 
                     tabbedPane.addTab("Section " + section, panel);
                 }
-
                 private HashMap<String, ArrayList<Object[]>> readStudentsFromCSV(String absolutePath) {
                     HashMap<String, ArrayList<Object[]>> sectionData = new HashMap<>();
                     Scanner sc;

@@ -78,6 +78,7 @@ public class Server{
                     CREATE TABLE IF NOT EXISTS "Exams" (
                     	"coursecode"	TEXT,
                     	"examtype"	TEXT,
+                    	"examname"  TEXT,
                     	"examID"	TEXT,
                     	PRIMARY KEY("examID"),
                     	FOREIGN KEY("coursecode") REFERENCES "CourseInfo"("coursecode")

@@ -1,10 +1,13 @@
+import org.json.*;
+
 import java.io.*;
 import java.net.*;
 import java.sql.*;
 
-public class Server{
+public class Server {
     private static final int PORT = 12345;
     public static final String DB_URL = "jdbc:sqlite:db.sqlite";
+
     public static void main(String[] args) {
         try (ServerSocket serverSocket = new ServerSocket(PORT)) {
             System.out.println("Server is listening on port " + PORT);
@@ -23,18 +26,19 @@ public class Server{
             ex.printStackTrace();
         }
     }
+
     private static void setupDatabase() {
         try (Connection conn = DriverManager.getConnection(DB_URL);
              Statement stmt = conn.createStatement()) {
 
             String lecturers = """
-                    CREATE TABLE IF NOT EXISTS "Lecturers" (
-                    	"username"	TEXT,
-                    	"password"	TEXT,
-                    	"faculty"	TEXT,
-                    	PRIMARY KEY("username")
-                    )
-                """;
+                        CREATE TABLE IF NOT EXISTS "Lecturers" (
+                        	"username"	TEXT,
+                        	"password"	TEXT,
+                        	"faculty"	TEXT,
+                        	PRIMARY KEY("username")
+                        )
+                    """;
             String courseInfo = """
                     CREATE TABLE IF NOT EXISTS "CourseInfo" (
                     	"coursecode"	TEXT,
@@ -111,16 +115,22 @@ public class Server{
                     	FOREIGN KEY("studentID") REFERENCES "Students"("studentID")
                     )
                     """;
-            stmt.executeUpdate(lecturers); stmt.executeUpdate(courseInfo); stmt.executeUpdate(students);
-            stmt.executeUpdate(courses); stmt.executeUpdate(LOs); stmt.executeUpdate(questions);
-            stmt.executeUpdate(exams); stmt.executeUpdate(enrollments); stmt.executeUpdate(grades);
+            stmt.executeUpdate(lecturers);
+            stmt.executeUpdate(courseInfo);
+            stmt.executeUpdate(students);
+            stmt.executeUpdate(courses);
+            stmt.executeUpdate(LOs);
+            stmt.executeUpdate(questions);
+            stmt.executeUpdate(exams);
+            stmt.executeUpdate(enrollments);
+            stmt.executeUpdate(grades);
         } catch (SQLException ex) {
             System.err.println("Database setup error: " + ex.getMessage());
         }
     }
 }
 
-class ClientHandler extends Thread{
+class ClientHandler extends Thread {
     private final Socket socket;
 
     public ClientHandler(Socket socket) {
@@ -130,39 +140,64 @@ class ClientHandler extends Thread{
     @Override
     public void run() {
         try (InputStream input = socket.getInputStream();
-             OutputStream output = socket.getOutputStream();
+             OutputStream out = socket.getOutputStream();
+             ObjectOutputStream objectOutput = new ObjectOutputStream(socket.getOutputStream());
              BufferedReader reader = new BufferedReader(new InputStreamReader(input));
-             PrintWriter writer = new PrintWriter(output, true)) {
-
-            String query = reader.readLine();
-            System.out.println("Received query: " + query);
-
-            String result = executeQuery(query);
-            writer.println(result);
-
+             PrintWriter writer = new PrintWriter(out, true)) {
+            while(true) {
+                String query = reader.readLine();
+                System.out.println("Received query: " + query);
+                if (query.trim().toUpperCase().startsWith("SELECT")) {
+                    JSONArray result = executeSelect(query);
+                    objectOutput.writeObject(result);
+                } else {
+                    String result = executeUpdate(query);
+                    writer.println(result);
+                }
+            }
         } catch (IOException ex) {
             System.err.println("Server handler error: " + ex.getMessage());
         }
     }
 
-    private String executeQuery(String query) {
+    private JSONArray executeSelect(String query) {
         try (Connection conn = DriverManager.getConnection(Server.DB_URL);
              Statement stmt = conn.createStatement()) {
             if (query.trim().toUpperCase().startsWith("SELECT")) {
                 ResultSet rs = stmt.executeQuery(query);
-                StringBuilder result = new StringBuilder();
+                ResultSetMetaData rsmd = rs.getMetaData();
+                JSONArray result = new JSONArray();
+
                 while (rs.next()) {
-                    result.append(rs.getInt("id")).append(" | ")
-                            .append(rs.getString("name")).append(" | ")
-                            .append(rs.getString("email")).append("\n");
+                    int numColumns = rsmd.getColumnCount();
+                    JSONObject obj = new JSONObject();
+                    for (int i = 1; i <= numColumns; i++) {
+                        String column_name = rsmd.getColumnName(i);
+                        obj.put(column_name, rs.getObject(column_name));
+                    }
+                    result.put(obj);
                 }
-                return result.toString();
-            } else {
+
+                return result;
+            } /*else {
                 int rowsAffected = stmt.executeUpdate(query);
                 return "Query OK, " + rowsAffected + " rows affected.";
             }
+            */
         } catch (SQLException ex) {
-            return "Database error: " + ex.getMessage();
+            ex.printStackTrace();//"Database error: " + ex.getMessage();
         }
+        return null;
+    }
+
+    private String executeUpdate(String query) {
+        try (Connection conn = DriverManager.getConnection(Server.DB_URL);
+             Statement stmt = conn.createStatement()) {
+            int rowsAffected = stmt.executeUpdate(query);
+            return "Query OK, " + rowsAffected + " rows affected.";
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+        return null;
     }
 }

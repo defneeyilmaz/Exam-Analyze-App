@@ -1,3 +1,5 @@
+import org.json.JSONArray;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -21,6 +23,9 @@ public class Frame extends JFrame {
     private Socket socket;
     private PrintWriter out;
     private BufferedReader in;
+    private  ObjectInputStream objectInput;
+
+
 
     Toolkit kit = Toolkit.getDefaultToolkit();
     Dimension screenSize = kit.getScreenSize();
@@ -148,7 +153,7 @@ public class Frame extends JFrame {
                             String response = in.readLine();
                             System.out.println(response);
                         } catch (IOException ex) {
-                            throw new RuntimeException(ex);
+                            ex.printStackTrace();
                         }
                     }
 
@@ -905,6 +910,16 @@ public class Frame extends JFrame {
 
         setupConnection();
 
+        out.println("SELECT * FROM Lecturers");
+        try {
+            JSONArray response = (JSONArray) objectInput.readObject();
+            System.out.println(response.toString());
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+
         setSize(width / 4 * 3, height / 4 * 3);
         setLocation(width / 8, height / 8);
         setVisible(true);
@@ -934,6 +949,8 @@ public class Frame extends JFrame {
             socket = new Socket(SERVER_ADDRESS, SERVER_PORT);
             out = new PrintWriter(socket.getOutputStream(), true);
             in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            objectInput = new ObjectInputStream(socket.getInputStream());
+
             System.out.println("Connected to the server!");
         }catch (IOException e) {
             e.printStackTrace();

@@ -3,6 +3,7 @@ import org.json.*;
 import java.io.*;
 import java.net.*;
 import java.sql.*;
+import java.util.ArrayList;
 import java.util.List;
 
 public class Server {
@@ -116,7 +117,7 @@ public class Server {
                     	FOREIGN KEY("studentID") REFERENCES "Students"("studentID")
                     )
                     """;
-            stmt.executeUpdate(lecturers);
+
             stmt.executeUpdate(courseInfo);
             stmt.executeUpdate(students);
             stmt.executeUpdate(courses);
@@ -125,6 +126,37 @@ public class Server {
             stmt.executeUpdate(exams);
             stmt.executeUpdate(enrollments);
             stmt.executeUpdate(grades);
+            stmt.executeUpdate(lecturers);
+
+            String courseinfo_count_query = "SELECT COUNT(*) AS row_count FROM CourseInfo";
+            int row_count = 0;
+            try {
+                ResultSet rs = stmt.executeQuery(courseinfo_count_query);
+                if (rs.next()) {
+                    row_count = rs.getInt("row_count");
+
+                }
+            } catch (SQLException e) {
+                System.err.println("Database error: " + e.getMessage());
+            }
+
+
+            if (row_count == 0) {
+                Scraper scraper = new Scraper();
+                ArrayList<Scraper.Course> scrapedCourses = scraper.getScrapedCourses();
+
+                for (Scraper.Course temp : scrapedCourses) {
+                    String query = "INSERT INTO CourseInfo VALUES (\"" + temp.getCourseCode() + "\", \"" + temp.getCourseName() + "\" , \"" + temp.getEvaluationCriteria().toString() + "\")";
+                    stmt.executeUpdate(query);
+                    int count = 1;
+                    for (String lo : temp.getLOs()) {
+                        stmt.executeUpdate("INSERT INTO LOs VALUES (\"" + temp.getCourseCode() + "\", \"" + count + "\" , \"" + lo + "\")");
+                        count++;
+                    }
+                }
+            }
+
+            System.out.println("sj");
         } catch (SQLException ex) {
             System.err.println("Database setup error: " + ex.getMessage());
         }
@@ -145,7 +177,7 @@ class ClientHandler extends Thread {
              ObjectOutputStream objectOutput = new ObjectOutputStream(socket.getOutputStream());
              BufferedReader reader = new BufferedReader(new InputStreamReader(input));
              PrintWriter writer = new PrintWriter(out, true)) {
-            while(true) {
+            while (true) {
                 String query = reader.readLine();
                 System.out.println("Received query: " + query);
                 if (query.trim().toUpperCase().startsWith("SELECT")) {

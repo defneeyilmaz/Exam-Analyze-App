@@ -8,62 +8,86 @@ import java.util.ArrayList;
 
 public class Scraper {
     private ArrayList<String> courseCodes;
-    private final static String[] faculties = {"CE","SE"};
+    private final static String[] faculties = {"CE", "SE"};
     private final static String baseCourseURL = "https://se.ieu.edu.tr/en/syllabus/type/read/id/";
-    private ArrayList<Course> scrapedCourses = new ArrayList<>();
+    private ArrayList<Course> scrapedCourses;
 
-    public Scraper(){
+    public Scraper() {
         courseCodes = new ArrayList<>();
+        scrapedCourses = new ArrayList<>();
+        scrapeAll();
+    }
+
+    public ArrayList<Course> getScrapedCourses() {
+        return scrapedCourses;
     }
 
     class Course {
-        public String courseName;
-        public String courseCode;
-        public ArrayList<String> LOs;
-        public ArrayList<String> evaluationCriteria;
+        private String courseName;
+        private String courseCode;
+        private ArrayList<String> LOs;
+        private ArrayList<String> evaluationCriteria;
 
         public Course() {
             LOs = new ArrayList<>();
             evaluationCriteria = new ArrayList<>();
         }
 
+        public String getCourseName() {
+            return courseName;
+        }
+
+        public String getCourseCode() {
+            return courseCode;
+        }
+
+        public ArrayList<String> getLOs() {
+            return LOs;
+        }
+
+        public ArrayList<String> getEvaluationCriteria() {
+            return evaluationCriteria;
+        }
+
         @Override
         public String toString() {
-            return "------------------------"+"\nCourse Code:" + courseCode + "\nCourse Name:" + courseName +
+            return "------------------------" + "\nCourse Code:" + courseCode + "\nCourse Name:" + courseName +
                     "\nCourse Learning Outcomes:" + LOs + "\nCourse Evaluation Criteria:" + evaluationCriteria;
         }
     }
-    private void getAllFacultyCourse(){
-        for (String faculty : faculties){
+
+    private void getAllFacultyCourse() {
+        for (String faculty : faculties) {
             try {
                 Document doc = Jsoup.connect("https://" + faculty.toLowerCase() + ".ieu.edu.tr/en/curr").get();
                 Elements courses = doc.getElementsByClass("ders");
                 for (Element temp : courses) {
-                    if(!courseCodes.contains(temp.text()) && temp.text().matches("^(SE|CE)\\s\\d+")){
+                    if (!courseCodes.contains(temp.text()) && temp.text().matches("^(SE|CE)\\s\\d+")) {
                         courseCodes.add(temp.text());
                     }
 
                 }
             } catch (IOException e) {
                 System.err.println("No Internet Connection.");
-            }catch (NullPointerException e){
+            } catch (NullPointerException e) {
                 e.printStackTrace();
             }
         }
         System.out.println(courseCodes);
     }
+
     /**
      * Scrapes course code, course name, course learning outcomes and course
      * evaluation criteria for all the courses listed above in courseCodes.
      */
-    public void scrapeAll() {
+    private void scrapeAll() {
         getAllFacultyCourse();
         for (String code : courseCodes) {
             try {
                 scrapedCourses.add(scrape(code));
             } catch (IOException e) {
                 System.err.println("No Internet Connection.");
-            }catch (NullPointerException e){
+            } catch (NullPointerException e) {
                 e.printStackTrace();
             }
         }
@@ -72,6 +96,7 @@ public class Scraper {
 
     /**
      * Supporting function for scrapeAll()
+     *
      * @param courseCode
      * @return Course object with its corresponding attributes.
      * @throws IOException
@@ -82,7 +107,7 @@ public class Scraper {
         Course temp = new Course();
         System.out.println(courseCode);
         Document doc = Jsoup.connect(baseCourseURL + courseCode.replace(" ", "+")).get();
-        if(doc != null) {
+        if (doc != null) {
             temp.courseName = doc.selectFirst("#course_name").text();
             temp.courseCode = courseCode;
             int i = 0;
@@ -120,8 +145,9 @@ public class Scraper {
         }
         return temp;
     }
-    public void print(){
-        for (Course c : scrapedCourses){
+
+    public void print() {
+        for (Course c : scrapedCourses) {
             System.out.println(c);
         }
     }

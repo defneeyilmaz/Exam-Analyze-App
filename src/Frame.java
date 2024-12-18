@@ -212,6 +212,7 @@ public class Frame extends JFrame {
         private class ButtonPanel extends JPanel {
             JButton addButton;
             JButton removeButton;
+            Boolean selected = false;
 
             public ButtonPanel() {
                 this.addButton = new JButton("Add Course");
@@ -255,11 +256,18 @@ public class Frame extends JFrame {
                     public void valueChanged(ListSelectionEvent event) {
                         String selectedCourse = courseListPanel.list.getSelectedValue();
                         if (selectedCourse != null) {
-                            rightPanel.courseNamePanel.updateCourseName(selectedCourse);
-                            rightPanel.setVisible(true);
+                            updateRightPanel(selectedCourse);
+                            selected = true;
                         }
                     }
                 });
+
+            }
+            private void updateRightPanel(String selectedCourse) {
+                Frame parentFrame = (Frame) SwingUtilities.getWindowAncestor(this);
+                if (parentFrame != null) {
+                    parentFrame.proceedToCoursePage(selectedCourse);
+                }
             }
         }
 
@@ -287,13 +295,14 @@ public class Frame extends JFrame {
         private class CourseNamePanel extends JPanel {
             JLabel courseNameLabel;
 
-            public CourseNamePanel() {
+            public CourseNamePanel(String courseName) {
                 this.courseNameLabel = new JLabel();
+                updateCourseName(courseName);
                 add(courseNameLabel);
             }
 
             public void updateCourseName(String courseName) {
-                courseNameLabel.setText("Course Name: " + courseName);
+                this.courseNameLabel.setText("Course Name: " + courseName);
             }
         }
 
@@ -837,15 +846,18 @@ public class Frame extends JFrame {
             }
         }
 
-        public RightPanel() {
+        public RightPanel(String initialCourse) {
             setLayout(new BorderLayout());
-            this.courseNamePanel = new CourseNamePanel();
+            this.courseNamePanel = new CourseNamePanel(initialCourse);
             this.courseNamePanel.add(this.courseNamePanel.courseNameLabel);
             this.courseInfoPanel = new CourseInfoPanel();
             this.courseNamePanel.setPreferredSize(new Dimension(width / 32 * 20, (height / 32)));
             add(this.courseNamePanel, BorderLayout.NORTH);
             this.courseInfoPanel.setPreferredSize(new Dimension(width / 32 * 20, (height / 32 * 15)));
             add(this.courseInfoPanel, BorderLayout.CENTER);
+        }
+        public void updatePanel(String newCourse) {
+            this.courseNamePanel.updateCourseName(newCourse);
         }
     }
 
@@ -870,12 +882,17 @@ public class Frame extends JFrame {
     public void proceedToMainUI(){
         getContentPane().remove(loginSignupPanel);
         this.leftPanel = new LeftPanel();
-        this.rightPanel = new RightPanel();
-
         add(this.leftPanel, BorderLayout.WEST);
-        add(this.rightPanel, BorderLayout.CENTER);
-        this.rightPanel.setVisible(false);
+        revalidate();
+        repaint();
+    }
 
+    public void proceedToCoursePage(String selectedCourse) {
+        if (this.rightPanel != null) {
+            remove(this.rightPanel);
+        }
+        this.rightPanel = new RightPanel(selectedCourse);
+        add(this.rightPanel, BorderLayout.CENTER);
         revalidate();
         repaint();
     }

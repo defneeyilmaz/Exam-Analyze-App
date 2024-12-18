@@ -8,10 +8,9 @@ import java.awt.event.ActionListener;
 import java.io.*;
 import java.io.PrintWriter;
 import java.net.*;
+import java.util.*;
 import java.util.List;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Scanner;
+import javax.swing.Timer;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.filechooser.FileFilter;
@@ -150,7 +149,12 @@ public class Frame extends JFrame {
                         confirmPasswordField.setText("");
                         return;
                     }else{
-                        out.println("INSERT INTO Lecturers VALUES (\""+username+"\", \""+password+"\", \"Software Engineering\")");
+                        Map<String,String> attributes = new HashMap<>();
+                        attributes.put("username", username);
+                        attributes.put("password", password);
+                        attributes.put("faculty", "Software Engineering");
+                        String query = insertInto("Lecturers", attributes);
+                        out.println(query);
                         try {
                             String response = in.readLine();
                             System.out.println(response);
@@ -773,9 +777,11 @@ public class Frame extends JFrame {
                                 String question = questionArea.getText();
                                 String correctAnswer = answerArea.getText();
                                 String LOs = getSelectedCheckBoxes();
+                                //System.out.println(LOs); LO1,LO2
                                 if (question.isEmpty() || correctAnswer.isEmpty() || LOs.isEmpty()) {
                                     JOptionPane.showMessageDialog(popUpFrame, "Please fill all fields!", "Error", JOptionPane.ERROR_MESSAGE);
                                 } else {
+                                    Map<String,String> attributes = new HashMap<>();
                                     tableModel.addRow(new Object[]{tableModel.getRowCount() + 1, question, LOs});
                                     JOptionPane.showMessageDialog(popUpFrame, "Question saved successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
                                     mainFrame.setEnabled(true);
@@ -960,6 +966,27 @@ public class Frame extends JFrame {
             JOptionPane.showMessageDialog(null, "Failed to connect to the server.", "Error", JOptionPane.ERROR_MESSAGE);
             System.exit(1);
         }
+    }
+
+    public String insertInto(String tableName, Map<String, String> attributes) {
+        StringBuilder query = new StringBuilder();
+        query.append("INSERT INTO ").append(tableName);
+        query.append(" VALUES ");
+        query.append(String.join(", ", formatValues(attributes)));
+        return query.toString();
+    }
+
+    private String formatValues(Map<String, String> attributes) {
+        StringBuilder formattedValues = new StringBuilder("(");
+        for (String value : attributes.values()) {
+            formattedValues.append("\"").append(value).append("\", ");
+        }
+        // Remove the trailing comma and space, and close the parentheses
+        if (formattedValues.length() > 2) {
+            formattedValues.setLength(formattedValues.length() - 2);
+        }
+        formattedValues.append(")");
+        return formattedValues.toString();
     }
 }
 

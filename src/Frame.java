@@ -2,7 +2,9 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.File;
+import java.io.*;
+import java.io.PrintWriter;
+import java.net.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Scanner;
@@ -13,6 +15,13 @@ import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableColumnModel;
 
 public class Frame extends JFrame {
+    private static final String SERVER_ADDRESS = "localhost";
+    private static final int SERVER_PORT = 12345;
+
+    private Socket socket;
+    private PrintWriter out;
+    private BufferedReader in;
+
     Toolkit kit = Toolkit.getDefaultToolkit();
     Dimension screenSize = kit.getScreenSize();
     int width = screenSize.width;
@@ -121,7 +130,28 @@ public class Frame extends JFrame {
                 // Signup Button
                 signupButton = new JButton("Sign Up");
                 signupButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+                //TODO: regex
                 signupButton.addActionListener(e -> {
+                    String username = usernameField.getText();
+                    String password = passwordField.getText();
+                    String confirmPassword = confirmPasswordField.getText();
+
+                    if(!password.equals(confirmPassword)){
+                        JOptionPane.showMessageDialog(null, "Passwords don't match.\n Please try again.", "Error", JOptionPane.ERROR_MESSAGE);
+                        passwordField.setText("");
+                        confirmPasswordField.setText("");
+                        return;
+                    }else{
+                        out.println("INSERT INTO Lecturers VALUES (\""+username+"\", \""+password+"\", \"Software Engineering\")");
+                        try {
+                            String response = in.readLine();
+                            System.out.println(response);
+                        } catch (IOException ex) {
+                            throw new RuntimeException(ex);
+                        }
+                    }
+
                     JOptionPane.showMessageDialog(this, "Account created! Please log in.");
                     removeAll();
                     add(new LoginScreen());
@@ -873,6 +903,8 @@ public class Frame extends JFrame {
         });
         timer.start();
 
+        setupConnection();
+
         setSize(width / 4 * 3, height / 4 * 3);
         setLocation(width / 8, height / 8);
         setVisible(true);
@@ -895,6 +927,19 @@ public class Frame extends JFrame {
         add(this.rightPanel, BorderLayout.CENTER);
         revalidate();
         repaint();
+    }
+
+    private void setupConnection(){
+        try {
+            socket = new Socket(SERVER_ADDRESS, SERVER_PORT);
+            out = new PrintWriter(socket.getOutputStream(), true);
+            in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            System.out.println("Connected to the server!");
+        }catch (IOException e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(null, "Failed to connect to the server.", "Error", JOptionPane.ERROR_MESSAGE);
+            System.exit(1);
+        }
     }
 }
 

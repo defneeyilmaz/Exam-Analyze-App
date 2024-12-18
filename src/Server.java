@@ -11,6 +11,13 @@ public class Server{
 
             setupDatabase();
 
+            while (true) {
+                Socket socket = serverSocket.accept();
+                System.out.println("New client connected");
+
+                new ClientHandler(socket).start();
+            }
+
         } catch (IOException ex) {
             System.err.println("Server exception: " + ex.getMessage());
             ex.printStackTrace();
@@ -109,6 +116,53 @@ public class Server{
             stmt.executeUpdate(exams); stmt.executeUpdate(enrollments); stmt.executeUpdate(grades);
         } catch (SQLException ex) {
             System.err.println("Database setup error: " + ex.getMessage());
+        }
+    }
+}
+
+class ClientHandler extends Thread{
+    private final Socket socket;
+
+    public ClientHandler(Socket socket) {
+        this.socket = socket;
+    }
+
+    @Override
+    public void run() {
+        try (InputStream input = socket.getInputStream();
+             OutputStream output = socket.getOutputStream();
+             BufferedReader reader = new BufferedReader(new InputStreamReader(input));
+             PrintWriter writer = new PrintWriter(output, true)) {
+
+            String query = reader.readLine();
+            System.out.println("Received query: " + query);
+
+            String result = executeQuery(query);
+            writer.println(result);
+
+        } catch (IOException ex) {
+            System.err.println("Server handler error: " + ex.getMessage());
+        }
+    }
+
+    private String executeQuery(String query) {
+        try (Connection conn = DriverManager.getConnection(Server.DB_URL);
+             Statement stmt = conn.createStatement()) {
+            if (query.trim().toUpperCase().startsWith("SELECT")) {
+                ResultSet rs = stmt.executeQuery(query);
+                StringBuilder result = new StringBuilder();
+                while (rs.next()) {
+                    result.append(rs.getInt("id")).append(" | ")
+                            .append(rs.getString("name")).append(" | ")
+                            .append(rs.getString("email")).append("\n");
+                }
+                return result.toString();
+            } else {
+                int rowsAffected = stmt.executeUpdate(query);
+                return "Query OK, " + rowsAffected + " rows affected.";
+            }
+        } catch (SQLException ex) {
+            return "Database error: " + ex.getMessage();
         }
     }
 }

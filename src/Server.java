@@ -3,6 +3,7 @@ import org.json.*;
 import java.io.*;
 import java.net.*;
 import java.sql.*;
+import java.util.List;
 
 public class Server {
     private static final int PORT = 12345;
@@ -148,7 +149,7 @@ class ClientHandler extends Thread {
                 String query = reader.readLine();
                 System.out.println("Received query: " + query);
                 if (query.trim().toUpperCase().startsWith("SELECT")) {
-                    JSONArray result = executeSelect(query);
+                    List<Object> result = executeSelect(query);
                     objectOutput.writeObject(result);
                 } else {
                     String result = executeUpdate(query);
@@ -160,7 +161,7 @@ class ClientHandler extends Thread {
         }
     }
 
-    private JSONArray executeSelect(String query) {
+    private List<Object> executeSelect(String query) {
         try (Connection conn = DriverManager.getConnection(Server.DB_URL);
              Statement stmt = conn.createStatement()) {
             if (query.trim().toUpperCase().startsWith("SELECT")) {
@@ -178,7 +179,7 @@ class ClientHandler extends Thread {
                     result.put(obj);
                 }
 
-                return result;
+                return result.toList();
             } /*else {
                 int rowsAffected = stmt.executeUpdate(query);
                 return "Query OK, " + rowsAffected + " rows affected.";

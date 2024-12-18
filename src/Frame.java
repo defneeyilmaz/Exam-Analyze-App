@@ -1,4 +1,5 @@
 import org.json.JSONArray;
+import org.json.JSONObject;
 
 import javax.swing.*;
 import java.awt.*;
@@ -7,6 +8,7 @@ import java.awt.event.ActionListener;
 import java.io.*;
 import java.io.PrintWriter;
 import java.net.*;
+import java.util.List;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Scanner;
@@ -912,8 +914,9 @@ public class Frame extends JFrame {
 
         out.println("SELECT * FROM Lecturers");
         try {
-            JSONArray response = (JSONArray) objectInput.readObject();
+            List<Object> response = (List<Object>) objectInput.readObject();
             System.out.println(response.toString());
+
         } catch (IOException ex) {
             ex.printStackTrace();
         } catch (ClassNotFoundException e) {

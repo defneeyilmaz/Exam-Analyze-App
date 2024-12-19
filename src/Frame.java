@@ -10,6 +10,7 @@ import java.io.PrintWriter;
 import java.net.*;
 import java.util.*;
 import java.util.List;
+import java.util.function.DoubleToIntFunction;
 import javax.swing.Timer;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
@@ -24,9 +25,7 @@ public class Frame extends JFrame {
     private Socket socket;
     private PrintWriter out;
     private BufferedReader in;
-    private  ObjectInputStream objectInput;
-
-
+    private ObjectInputStream objectInput;
 
     Toolkit kit = Toolkit.getDefaultToolkit();
     Dimension screenSize = kit.getScreenSize();
@@ -38,10 +37,10 @@ public class Frame extends JFrame {
         LoginScreen loginScreen;
         Boolean success = false;
         String[] faculties = new String[]{"Software Engineering", "Computer Engineering"};
+        String name; String faculty;
         private class LoginScreen extends JPanel {
             JTextField usernameField;
             JPasswordField passwordField;
-            JComboBox<String> facultyField;
             JButton loginButton, signUpButton;
 
             public LoginScreen() {
@@ -57,16 +56,11 @@ public class Frame extends JFrame {
                 this.usernameField = new JTextField(10);
                 JLabel passwordLabel = new JLabel("Password:");
                 this.passwordField = new JPasswordField(10);
-                JLabel facultyLabel = new JLabel("Faculty:");
-                this.facultyField = new JComboBox<>(faculties);
-                this.facultyField.setSelectedIndex(-1);
 
                 inputPanel.add(usernameLabel);
                 inputPanel.add(this.usernameField);
                 inputPanel.add(passwordLabel);
                 inputPanel.add(this.passwordField);
-                inputPanel.add(facultyLabel);
-                inputPanel.add(this.facultyField);
 
                 // Buttons
                 this.loginButton = new JButton("Login");
@@ -76,15 +70,42 @@ public class Frame extends JFrame {
 
                 // Button Listeners
                 this.loginButton.addActionListener(e -> {
-                    String username = usernameField.getText();
-                    String password = new String(passwordField.getPassword());
-                    String faculty = (String)facultyField.getSelectedItem();
-                    if (username.equals("admin") && password.equals("1234")) {
-                        JOptionPane.showMessageDialog(this, "Login Successful!");
-                        this.removeAll();
-                        success = true;
-                    } else {
-                        JOptionPane.showMessageDialog(this, "No account found. Please sign up.");
+                    String username = usernameField.getText().trim();
+                    String password = new String(passwordField.getPassword()).trim();
+
+                    // Update the query to select all columns
+                    String query = "SELECT * FROM Lecturers WHERE username = '" + username + "' AND password = '" + password + "'";
+                    out.println(query);
+
+                    try {
+                        // Read the response from the server
+                        Object response = objectInput.readObject();
+
+                        if (response instanceof List<?> && !((List<?>) response).isEmpty()) {
+                            List<?> responseList = (List<?>) response;
+
+                            // Assuming the server sends rows as maps or objects
+                            if (responseList.getFirst() instanceof Map<?, ?>) {
+                                @SuppressWarnings("unchecked")
+                                Map<String, String> rowData = (Map<String, String>) responseList.getFirst();
+
+                                String dbUsername = rowData.get("username");
+                                String dbFaculty = rowData.get("faculty");
+
+                                JOptionPane.showMessageDialog(this, "Login Successful!\nWelcome " + dbUsername);
+                                loginSignupPanel.name = dbUsername;
+                                loginSignupPanel.faculty = dbFaculty;
+                                this.removeAll();
+                                success = true;
+                            } else {
+                                JOptionPane.showMessageDialog(this, "Unexpected response format.", "Error", JOptionPane.ERROR_MESSAGE);
+                            }
+                        } else {
+                            JOptionPane.showMessageDialog(this, "No account found. Please sign up.", "Login Failed", JOptionPane.ERROR_MESSAGE);
+                        }
+                    } catch (IOException | ClassNotFoundException ex) {
+                        ex.printStackTrace();
+                        JOptionPane.showMessageDialog(this, "An error occurred. Please try again later.", "Error", JOptionPane.ERROR_MESSAGE);
                     }
                 });
 
@@ -116,6 +137,7 @@ public class Frame extends JFrame {
             JTextField usernameField;
             JPasswordField passwordField, confirmPasswordField;
             JButton signupButton;
+            JButton cancelButton;
             JComboBox<String> facultyField;
 
             public SignupScreen() {
@@ -151,6 +173,9 @@ public class Frame extends JFrame {
                 this.signupButton = new JButton("Sign Up");
                 this.signupButton.setAlignmentX(Component.CENTER_ALIGNMENT);
 
+                this.cancelButton = new JButton("Cancel");
+                this.cancelButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+
                 //TODO: regex
                 this.signupButton.addActionListener(e -> {
                     String username = this.usernameField.getText();
@@ -168,7 +193,6 @@ public class Frame extends JFrame {
                         attributes.put("password", password);
                         attributes.put("faculty", faculty);
                         String query = insertInto("Lecturers", attributes);
-                        System.out.println(query);
                         out.println(query);
                         try {
                             String response = in.readLine();
@@ -185,6 +209,13 @@ public class Frame extends JFrame {
                     repaint();
                 });
 
+                this.cancelButton.addActionListener(e -> {
+                    removeAll();
+                    add(new LoginScreen());
+                    revalidate();
+                    repaint();
+                });
+
                 // Add Components
                 add(Box.createVerticalGlue());
                 add(Box.createVerticalGlue());
@@ -194,6 +225,7 @@ public class Frame extends JFrame {
                 add(inputPanel);
                 add(Box.createVerticalStrut(20));
                 add(this.signupButton);
+                add(this.cancelButton);
                 add(Box.createVerticalStrut(10));
                 add(Box.createVerticalGlue());
                 add(Box.createVerticalGlue());
@@ -223,8 +255,8 @@ public class Frame extends JFrame {
             public UserInfoPanel() {
                 this.userNamePanel = new JPanel();
                 this.userNameLabel = new JLabel("     Username:");
-                this.userName = new JLabel("Ufuk Çelikkan");
-                this.department = new JLabel("       Software Engineering");
+                this.userName = new JLabel("   "+ loginSignupPanel.name);
+                this.department = new JLabel("     "+loginSignupPanel.faculty);
                 setLayout(new GridLayout(0, 1));
                 add(this.userNamePanel);
                 this.userNamePanel.add(this.userNameLabel);
@@ -245,6 +277,28 @@ public class Frame extends JFrame {
             DefaultListModel<String> listModel;
             JList<String> list;
             JScrollPane scrollPane;
+
+            void setCourses() {
+                String setCourses = "SELECT coursename FROM Courses WHERE lecturername = '" + loginSignupPanel.name + "'";
+                try {
+                    out.println(setCourses);
+                    Object response = objectInput.readObject();
+
+                    if (response instanceof List<?> && !((List<?>) response).isEmpty()) {
+                        List<?> responseList = (List<?>) response;
+
+                        for (Object course : responseList) {
+                            @SuppressWarnings("unchecked")
+                            Map<String, String> courseMap = (Map<String, String>) course;
+                            String courseName = courseMap.get("coursename");
+                            this.listModel.addElement(courseName);
+                        }
+                    }
+                } catch (IOException | ClassNotFoundException ex) {
+                    ex.printStackTrace();
+                }
+            }
+
 
             public CourseListPanel() {
                 this.listModel = new DefaultListModel<>();
@@ -280,18 +334,43 @@ public class Frame extends JFrame {
                 setBorder(BorderFactory.createTitledBorder(""));
 
                 this.addButton.addActionListener(new ActionListener() {
-                    final String[] SECourses = new String[]{"SE323", "SE321", "SE311", "SE375", "SE216",
-                            "SE209", "SE322"};
-
                     @Override
                     public void actionPerformed(ActionEvent e) {
-                        Object selectedCourse = JOptionPane.showInputDialog(null,
-                                "Choose the course to add", "Add Course", JOptionPane.QUESTION_MESSAGE,
-                                null, this.SECourses, this.SECourses[0]);
-                        if (!courseListPanel.listModel.contains(selectedCourse)) {
-                            courseListPanel.listModel.addElement(selectedCourse.toString());
-                        } else {
-                            JOptionPane.showMessageDialog(Frame.super.rootPane, "You already add this course");
+                        try {
+                            String query = "SELECT coursecode FROM CourseInfo";
+                            out.println(query);
+                            Object response = objectInput.readObject();
+                            String[] courses;
+                            if (response instanceof List<?>) {
+                                List<?> responseList = (List<?>) response;
+                                courses = responseList.stream().map(obj -> {
+                                    String raw = obj.toString();
+                                    return raw.substring(raw.indexOf("=") + 1, raw.length() - 1).trim();}).toArray(String[]::new);
+                            } else {
+                                throw new IllegalArgumentException("Unexpected response format");
+                            }
+                            Object selectedCourse = JOptionPane.showInputDialog(null,"Choose the course to add",
+                                    "Add Course", JOptionPane.QUESTION_MESSAGE, null, courses, courses.length > 0 ? courses[0] : null);
+                            if (selectedCourse != null && !courseListPanel.listModel.contains(selectedCourse)) {
+                                courseListPanel.listModel.addElement(selectedCourse.toString());
+                                LinkedHashMap<String, String> attributes = new LinkedHashMap<>();
+                                attributes.put("lecturername", loginSignupPanel.name);
+                                attributes.put("coursename", selectedCourse.toString());
+                                String insert = insertInto("Courses", attributes);
+                                try {
+                                    out.println(insert);
+                                    String response_ = in.readLine();
+                                    System.out.println(response_);
+                                } catch (IOException ex) {
+                                    ex.printStackTrace();
+                                }
+                            } else if (selectedCourse != null) {
+                                JOptionPane.showMessageDialog(Frame.super.rootPane, "You already added this course.");
+                            }
+                        } catch (IOException | ClassNotFoundException ex) {
+                            ex.printStackTrace();
+                            JOptionPane.showMessageDialog(Frame.super.rootPane,
+                                    "Failed to fetch courses. Please try again.", "Error", JOptionPane.ERROR_MESSAGE);
                         }
                     }
                 });
@@ -317,7 +396,6 @@ public class Frame extends JFrame {
                         }
                     }
                 });
-
             }
             private void updateRightPanel(String selectedCourse) {
                 Frame parentFrame = (Frame) SwingUtilities.getWindowAncestor(this);
@@ -953,6 +1031,7 @@ public class Frame extends JFrame {
     public void proceedToMainUI(){
         getContentPane().remove(loginSignupPanel);
         this.leftPanel = new LeftPanel();
+        this.leftPanel.courseListPanel.setCourses();
         add(this.leftPanel, BorderLayout.WEST);
         revalidate();
         repaint();

@@ -60,7 +60,6 @@ public class Server {
                     CREATE TABLE IF NOT EXISTS "Courses" (
                     	"lecturername"	TEXT,
                     	"coursename"	TEXT,
-                    	"section"	TEXT,
                     	FOREIGN KEY("coursename") REFERENCES "CourseInfo"("coursecode"),
                     	FOREIGN KEY("lecturername") REFERENCES "Lecturers"("username")
                     )

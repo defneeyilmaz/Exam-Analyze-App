@@ -37,9 +37,11 @@ public class Frame extends JFrame {
     public class LoginSignupPanel extends JPanel {
         LoginScreen loginScreen;
         Boolean success = false;
+        String[] faculties = new String[]{"Software Engineering", "Computer Engineering"};
         private class LoginScreen extends JPanel {
             JTextField usernameField;
             JPasswordField passwordField;
+            JComboBox<String> facultyField;
             JButton loginButton, signUpButton;
 
             public LoginScreen() {
@@ -55,11 +57,16 @@ public class Frame extends JFrame {
                 this.usernameField = new JTextField(10);
                 JLabel passwordLabel = new JLabel("Password:");
                 this.passwordField = new JPasswordField(10);
+                JLabel facultyLabel = new JLabel("Faculty:");
+                this.facultyField = new JComboBox<>(faculties);
+                this.facultyField.setSelectedIndex(-1);
 
                 inputPanel.add(usernameLabel);
                 inputPanel.add(this.usernameField);
                 inputPanel.add(passwordLabel);
                 inputPanel.add(this.passwordField);
+                inputPanel.add(facultyLabel);
+                inputPanel.add(this.facultyField);
 
                 // Buttons
                 this.loginButton = new JButton("Login");
@@ -71,6 +78,7 @@ public class Frame extends JFrame {
                 this.loginButton.addActionListener(e -> {
                     String username = usernameField.getText();
                     String password = new String(passwordField.getPassword());
+                    String faculty = (String)facultyField.getSelectedItem();
                     if (username.equals("admin") && password.equals("1234")) {
                         JOptionPane.showMessageDialog(this, "Login Successful!");
                         this.removeAll();
@@ -108,6 +116,7 @@ public class Frame extends JFrame {
             JTextField usernameField;
             JPasswordField passwordField, confirmPasswordField;
             JButton signupButton;
+            JComboBox<String> facultyField;
 
             public SignupScreen() {
                 setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
@@ -120,11 +129,14 @@ public class Frame extends JFrame {
                 // Input Fields
                 JPanel inputPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 5));
                 JLabel usernameLabel = new JLabel("Username:");
-                usernameField = new JTextField(10);
+                this.usernameField = new JTextField(10);
                 JLabel passwordLabel = new JLabel("Password:");
-                passwordField = new JPasswordField(10);
+                this.passwordField = new JPasswordField(10);
                 JLabel confirmLabel = new JLabel("Confirm:");
-                confirmPasswordField = new JPasswordField(10);
+                this.confirmPasswordField = new JPasswordField(10);
+                JLabel facultyLabel = new JLabel("Faculty:");
+                this.facultyField = new JComboBox<>(faculties);
+                this.facultyField.setSelectedIndex(-1);
 
                 inputPanel.add(usernameLabel);
                 inputPanel.add(usernameField);
@@ -132,28 +144,31 @@ public class Frame extends JFrame {
                 inputPanel.add(passwordField);
                 inputPanel.add(confirmLabel);
                 inputPanel.add(confirmPasswordField);
+                inputPanel.add(facultyLabel);
+                inputPanel.add(facultyField);
 
                 // Signup Button
-                signupButton = new JButton("Sign Up");
-                signupButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+                this.signupButton = new JButton("Sign Up");
+                this.signupButton.setAlignmentX(Component.CENTER_ALIGNMENT);
 
                 //TODO: regex
-                signupButton.addActionListener(e -> {
-                    String username = usernameField.getText();
-                    String password = passwordField.getText();
-                    String confirmPassword = confirmPasswordField.getText();
+                this.signupButton.addActionListener(e -> {
+                    String username = this.usernameField.getText();
+                    String password = this.passwordField.getText();
+                    String confirmPassword = this.confirmPasswordField.getText();
+                    String faculty = (String)this.facultyField.getSelectedItem();
 
                     if(!password.equals(confirmPassword)){
                         JOptionPane.showMessageDialog(null, "Passwords don't match.\n Please try again.", "Error", JOptionPane.ERROR_MESSAGE);
-                        passwordField.setText("");
-                        confirmPasswordField.setText("");
+                        this.passwordField.setText("");
+                        this.confirmPasswordField.setText("");
                         return;
                     }else{
-                        Map<String,String> attributes = new HashMap<>();
-                        attributes.put("username", username);
+                        LinkedHashMap<String, String> attributes = new LinkedHashMap<>();                        attributes.put("username", username);
                         attributes.put("password", password);
-                        attributes.put("faculty", "Software Engineering");
+                        attributes.put("faculty", faculty);
                         String query = insertInto("Lecturers", attributes);
+                        System.out.println(query);
                         out.println(query);
                         try {
                             String response = in.readLine();
@@ -781,7 +796,7 @@ public class Frame extends JFrame {
                                 if (question.isEmpty() || correctAnswer.isEmpty() || LOs.isEmpty()) {
                                     JOptionPane.showMessageDialog(popUpFrame, "Please fill all fields!", "Error", JOptionPane.ERROR_MESSAGE);
                                 } else {
-                                    Map<String,String> attributes = new HashMap<>();
+                                    LinkedHashMap<String, String> attributes = new LinkedHashMap<>();
                                     tableModel.addRow(new Object[]{tableModel.getRowCount() + 1, question, LOs});
                                     JOptionPane.showMessageDialog(popUpFrame, "Question saved successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
                                     mainFrame.setEnabled(true);
@@ -968,20 +983,25 @@ public class Frame extends JFrame {
         }
     }
 
-    public String insertInto(String tableName, Map<String, String> attributes) {
+    public String insertInto(String tableName, LinkedHashMap<String, String> attributes) {
         StringBuilder query = new StringBuilder();
-        query.append("INSERT INTO ").append(tableName);
-        query.append(" VALUES ");
-        query.append(String.join(", ", formatValues(attributes)));
+        query.append("INSERT INTO ").append(tableName).append(" (");
+        for (String key : attributes.keySet()) {
+            query.append(key).append(", ");
+        }
+        if (!query.isEmpty()) {
+            query.setLength(query.length() - 2);
+        }
+        query.append(") VALUES ");
+        query.append(formatValues(attributes));
         return query.toString();
     }
 
-    private String formatValues(Map<String, String> attributes) {
+    private String formatValues(LinkedHashMap<String, String> attributes) {
         StringBuilder formattedValues = new StringBuilder("(");
         for (String value : attributes.values()) {
             formattedValues.append("\"").append(value).append("\", ");
         }
-        // Remove the trailing comma and space, and close the parentheses
         if (formattedValues.length() > 2) {
             formattedValues.setLength(formattedValues.length() - 2);
         }

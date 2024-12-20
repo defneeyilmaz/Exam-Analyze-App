@@ -1,6 +1,4 @@
-import org.json.JSONArray;
-import org.json.JSONObject;
-
+import java.time.LocalDateTime;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -847,6 +845,7 @@ public class Frame extends JFrame {
             private class QuestionPanel extends JPanel {
                 JButton addButton;
                 JButton removeButton;
+                JButton seeButton;
                 JPanel buttonPanel;
                 QuestionTableModel tableModel;
                 JTable table;
@@ -855,6 +854,26 @@ public class Frame extends JFrame {
                 public QuestionPanel() {
                     tableModel = new QuestionTableModel();
                     table = new JTable(tableModel);
+
+                    String setCourses = "SELECT questionID ,question ,answer ,LO  FROM Questions WHERE coursecode = \""+leftPanel.courseListPanel.list.getSelectedValue()+"\"";
+                    try {
+                        out.println(setCourses);
+                        Object response = objectInput.readObject();
+
+                        if (response instanceof List<?> && !((List<?>) response).isEmpty()) {
+                            List<?> responseList = (List<?>) response;
+
+                            for (Object question : responseList) {
+                                @SuppressWarnings("unchecked")
+                                Map<String, String> questionMap = (Map<String, String>) question;
+                                tableModel.addRow(new Object[]{questionMap.get("questionID"),questionMap.get("question"),
+                                        questionMap.get("answer"),questionMap.get("LO")});
+                            }
+                        }
+                    } catch (IOException | ClassNotFoundException ex) {
+                        ex.printStackTrace();
+                    }
+
                     setPreferredSize(new Dimension(width / 32 * 14, height / 32 * 8));
                     int tableWidth = width / 32 * 14;
                     TableColumnModel columnModel = table.getColumnModel();
@@ -868,10 +887,12 @@ public class Frame extends JFrame {
 
                     addButton = new JButton("Add New Question");
                     removeButton = new JButton("Remove Question");
+                    seeButton = new JButton("See Selected Question");
                     buttonPanel = new JPanel();
 
                     buttonPanel.add(addButton);
                     buttonPanel.add(removeButton);
+                    buttonPanel.add(seeButton);
                     buttonPanel.setLayout(new FlowLayout(FlowLayout.LEFT));
                     add(scrollPane);
                     add(buttonPanel);
@@ -885,6 +906,16 @@ public class Frame extends JFrame {
                                     "Are you sure about removing the selected row?",
                                     "Confirm", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
                             if (confirm == JOptionPane.YES_OPTION) {
+                                String ID = (String) tableModel.getValueAt(selectedRow,0);
+
+                                String delete = "DELETE FROM Questions WHERE questionID = \"" + ID +"\"";
+                                try {
+                                    out.println(delete);
+                                    String response = in.readLine();
+                                    System.out.println("Server response: " + response);
+                                } catch (IOException ex) {
+                                    ex.printStackTrace();
+                                }
                                 tableModel.removeSelectedRow(selectedRow);
                             }
                         } else {
@@ -892,6 +923,63 @@ public class Frame extends JFrame {
                                     "No row selected to remove.", "Error", JOptionPane.ERROR_MESSAGE);
                         }
                     });
+
+                    seeButton.addActionListener(e -> {
+                        int selectedRow = table.getSelectedRow();
+                        if (selectedRow != -1) {
+                            String question="";
+                            String answer="";
+                            String LOs="";
+                            try {
+                                Object[] info = (Object[]) tableModel.getRow(selectedRow);
+                                question = (String) info[1];
+                                answer = (String) info[2];
+                                LOs = (String) info[3];
+                            }catch (ClassCastException ex){
+                                ex.printStackTrace();
+                            }
+                            JFrame popUpFrame = new JFrame("Question");
+                            popUpFrame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+                            popUpFrame.setSize(640, 480);
+                            popUpFrame.setLocationRelativeTo(null);
+                            popUpFrame.setLayout(new BoxLayout(popUpFrame.getContentPane(), BoxLayout.Y_AXIS));
+                            JPanel textPanel = new JPanel();
+
+                            JTextArea textArea1 = new JTextArea();
+                            textArea1.setEditable(false);
+                            textArea1.setLineWrap(true);
+                            textArea1.setWrapStyleWord(true);
+                            textPanel.add(new JLabel("Question"));
+                            textPanel.add(textArea1);
+                            textArea1.setText(question);
+                            textArea1.setBorder(BorderFactory.createTitledBorder(""));
+
+                            JTextArea textArea2 = new JTextArea();
+                            textArea2.setEditable(false);
+                            textArea2.setLineWrap(true);
+                            textArea2.setWrapStyleWord(true);
+                            textPanel.add(new JLabel("Answer"));
+                            textPanel.add(textArea2);
+                            textArea2.setText(answer);
+                            textArea2.setBorder(BorderFactory.createTitledBorder(""));
+
+                            textPanel.setLayout(new BoxLayout(textPanel, BoxLayout.Y_AXIS));
+                            textPanel.setPreferredSize(new Dimension(640, 380));
+
+                            JButton okButton = new JButton("OK");
+                            okButton.addActionListener(o -> popUpFrame.dispose());
+
+                            popUpFrame.add(textPanel);
+                            popUpFrame.add(new Label("Learning Outcomes: "+LOs));
+                            popUpFrame.add(okButton);
+
+                            popUpFrame.setVisible(true);
+                        }else{
+                            JOptionPane.showMessageDialog(this,
+                                    "No row selected.", "Error", JOptionPane.ERROR_MESSAGE);
+                        }
+                    });
+
 
                     setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
                     setBorder(BorderFactory.createTitledBorder("Questions"));
@@ -982,7 +1070,7 @@ public class Frame extends JFrame {
                         LOPanel.add(checkBoxPanel);
                         checkBoxPanel.setLayout(new GridLayout(0, 1));
                         //TODO derse göre oluştur
-                        addCheckBox(3);
+                        addCheckBox();
 
 
                         buttonPanel.add(saveButton);
@@ -1001,12 +1089,28 @@ public class Frame extends JFrame {
                                 String question = questionArea.getText();
                                 String correctAnswer = answerArea.getText();
                                 String LOs = getSelectedCheckBoxes();
-                                //System.out.println(LOs); LO1,LO2
+                                String questionID = createID();
+
                                 if (question.isEmpty() || correctAnswer.isEmpty() || LOs.isEmpty()) {
                                     JOptionPane.showMessageDialog(popUpFrame, "Please fill all fields!", "Error", JOptionPane.ERROR_MESSAGE);
                                 } else {
-                                    LinkedHashMap<String, String> attributes = new LinkedHashMap<>();
-                                    tableModel.addRow(new Object[]{tableModel.getRowCount() + 1, question, LOs});
+                                    LinkedHashMap<String,String> temp = new LinkedHashMap<>();
+                                    temp.put("coursecode",leftPanel.courseListPanel.list.getSelectedValue());
+                                    temp.put("question",question);
+                                    temp.put("answer",correctAnswer);
+                                    temp.put("possiblepoint","0");
+                                    temp.put("LO",LOs);
+                                    temp.put("questionID",questionID);
+                                    temp.put("examID","");
+                                    String insert = insertInto("Questions",temp);
+                                    try {
+                                        out.println(insert);
+                                        String response_ = in.readLine();
+                                        System.out.println(response_);
+                                    } catch (IOException ex) {
+                                        ex.printStackTrace();
+                                    }
+                                    tableModel.addRow(new Object[]{questionID, question, correctAnswer,LOs});
                                     JOptionPane.showMessageDialog(popUpFrame, "Question saved successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
                                     mainFrame.setEnabled(true);
                                     popUpFrame.dispose();
@@ -1026,7 +1130,26 @@ public class Frame extends JFrame {
                         popUpFrame.setVisible(true);
                     }
 
-                    private void addCheckBox(int LOCount) {
+                    private void addCheckBox() {
+                        String query = "SELECT COUNT(*) AS LOCount FROM LOs WHERE coursecode = \""+leftPanel.courseListPanel.list.getSelectedValue()+"\"";
+                        int LOCount=0;
+                        try {
+                            out.println(query);
+                            Object response = objectInput.readObject();
+
+                            if (response instanceof List<?> && !((List<?>) response).isEmpty()) {
+                                List<?> responseList = (List<?>) response;
+                                for (Object temp: responseList) {
+                                    @SuppressWarnings("unchecked")
+                                    Map<String, Integer> count= (Map<String, Integer>) temp;
+                                    System.out.println(count.get("LOCount"));
+                                    LOCount = count.get("LOCount");
+                                }
+                            }
+                        } catch (IOException | ClassNotFoundException ex) {
+                            ex.printStackTrace();
+                        }
+
                         checkBoxPanel.removeAll();
                         for (int i = 0; i < LOCount; i++) {
                             JCheckBox temp = new JCheckBox("LO" + (i + 1));
@@ -1049,8 +1172,7 @@ public class Frame extends JFrame {
 
                 private class QuestionTableModel extends AbstractTableModel {
 
-                    private String[] columnNames = {"#", "Question", "Learning Outcomes"};
-                    //private Object[][] data = {{"1","Selam ","LO1"}};
+                    private String[] columnNames = {"ID", "Question", "Answer", "Learning Outcomes"};
                     private ArrayList<Object[]> data = new ArrayList<>();
 
                     public int getColumnCount() {
@@ -1063,6 +1185,10 @@ public class Frame extends JFrame {
 
                     public Object getValueAt(int row, int col) {
                         return data.get(row)[col];
+                    }
+
+                    public Object getRow(int row){
+                        return data.get(row);
                     }
 
                     public String getColumnName(int col) {
@@ -1078,9 +1204,6 @@ public class Frame extends JFrame {
                         if (row >= 0 && row < data.size()) {
                             data.remove(row);
                             fireTableRowsDeleted(row, row);
-                            for (int i = row; i < data.size(); i++) {
-                                data.get(i)[0] = i + 1;
-                            }
                             fireTableDataChanged();
                         }
                     }
@@ -1217,6 +1340,11 @@ public class Frame extends JFrame {
         }
         formattedValues.append(")");
         return formattedValues.toString();
+    }
+    private String createID(){
+        LocalDateTime myObj = LocalDateTime.now();
+        String id = myObj.toString().replace("-","").replace("T","").replace(":","");
+        return id.substring(0,14);
     }
 }
 

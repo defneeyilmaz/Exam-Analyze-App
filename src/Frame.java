@@ -378,12 +378,22 @@ public class Frame extends JFrame {
                     @Override
                     public void actionPerformed(ActionEvent e) {
                         int selectedIndex = courseListPanel.list.getSelectedIndex();
+                        String selectedCourse = courseListPanel.list.getSelectedValue();
                         if (selectedIndex != -1) {
-                            courseListPanel.listModel.remove(selectedIndex);
-                            rightPanel.setVisible(false);
+                            String delete = "DELETE FROM Courses WHERE coursename = \"" + selectedCourse + "\" AND lecturername = \"" + loginSignupPanel.name + "\"";
+                            System.out.println(delete);
+                            try {
+                                out.println(delete);
+                                String response = in.readLine();
+                                System.out.println("Server response: " + response);
+                            } catch (IOException ex) {
+                                ex.printStackTrace();
+                            }
                         } else {
-                            JOptionPane.showMessageDialog(Frame.super.rootPane, "Choose a course to remove");
+                            JOptionPane.showMessageDialog(null, "Please select a valid course to remove.", "Error", JOptionPane.ERROR_MESSAGE);
                         }
+                        courseListPanel.listModel.remove(selectedIndex);
+                        rightPanel.setVisible(false);
                     }
                 });
                 courseListPanel.list.addListSelectionListener(new ListSelectionListener() {

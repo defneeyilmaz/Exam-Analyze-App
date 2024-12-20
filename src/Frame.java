@@ -504,7 +504,7 @@ public class Frame extends JFrame {
                                     Map<String, Object> courseMap = (Map<String, Object>) course;
                                     int number = (int) courseMap.get("number");
                                     String lo = (String) courseMap.get("text");
-                                    lo = lo.substring(0, lo.length() - 1);
+                                    lo = lo.substring(0);
                                     Object[] row = new Object[]{number, lo};
                                     this.tableModel.addRow(row);
                                 }
@@ -901,7 +901,7 @@ public class Frame extends JFrame {
                     buttonPanel.add(addButton);
                     buttonPanel.add(removeButton);
                     buttonPanel.add(seeButton);
-                    buttonPanel.setLayout(new FlowLayout(FlowLayout.LEFT));
+                    buttonPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
                     add(scrollPane);
                     add(buttonPanel);
 

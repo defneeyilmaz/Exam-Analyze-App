@@ -16,7 +16,9 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.table.AbstractTableModel;
+import javax.swing.table.JTableHeader;
 import javax.swing.table.TableColumnModel;
+import javax.swing.text.TableView;
 
 public class Frame extends JFrame {
     private static final String SERVER_ADDRESS = "localhost";
@@ -456,12 +458,131 @@ public class Frame extends JFrame {
         private class CourseInfoPanel extends JPanel {
             //------------------Learning Outcome Panel---------------------
             LoPanel loPanel;
-
             private class LoPanel extends JPanel {
+                LOTablePanel tablePanel;
+                private class LOTablePanel extends JPanel {
+                    LOTableModel tableModel;
+                    JTable table;
+                    JScrollPane scrollPane;
+                    private class LOTableModel extends AbstractTableModel {
+                        private String[] columnNames = {"#", "Learning Outcome"};
+
+                        private ArrayList<Object[]> data = new ArrayList<>();
+
+                        public int getColumnCount() {
+                            return columnNames.length;
+                        }
+
+                        public int getRowCount() {
+                            return data.size();
+                        }
+
+                        public Object getValueAt(int row, int col) {
+                            return data.get(row)[col];
+                        }
+
+                        public String getColumnName(int col) {
+                            return columnNames[col];
+                        }
+
+                        public void addRow(Object[] row) {
+                            data.add(row);
+                            fireTableRowsInserted(data.size() - 1, data.size() - 1);
+                        }
+                    }
+
+                    void getLOs() {
+                        String selectedCourse = leftPanel.courseListPanel.list.getSelectedValue();
+                        String query = "SELECT number, text FROM LOs WHERE coursecode = \"" + selectedCourse + "\"";
+                        try {
+                            out.println(query);
+                            Object response = objectInput.readObject();
+                            if (response instanceof List<?> && !((List<?>) response).isEmpty()) {
+                                List<?> responseList = (List<?>) response;
+
+                                for (Object course : responseList) {
+                                    @SuppressWarnings("unchecked")
+                                    Map<String, Object> courseMap = (Map<String, Object>) course;
+                                    int number = (int)courseMap.get("number");
+                                    String lo = (String)courseMap.get("text");
+                                    lo = lo.substring(0, lo.length() - 1);
+                                    Object[] row = new Object[]{number, lo};
+                                    this.tableModel.addRow(row);
+                                }
+                            } else {
+                                JOptionPane.showMessageDialog(null, "No learning outcomes found for the selected course.",
+                                        "Info", JOptionPane.INFORMATION_MESSAGE);
+                            }
+                        } catch (IOException | ClassNotFoundException ex) {
+                            ex.printStackTrace();
+                        }
+                    }
+
+                    public LOTablePanel() {
+                        this.tableModel = new LOTableModel();
+                        this.table = new JTable(this.tableModel);
+                        JTableHeader header = this.table.getTableHeader();
+                        header.setFont(new Font(getFont().toString(),Font.PLAIN, 15));
+                        TableColumnModel columnModel = table.getColumnModel();
+                        int tableWidth = width / 32 * 20;
+                        columnModel.getColumn(0).setPreferredWidth(tableWidth / 28);
+                        columnModel.getColumn(1).setPreferredWidth(tableWidth / 28 * 27);
+                        this.table.setRowHeight(height / 64 * 2);
+                        this.table.setAutoCreateRowSorter(true);
+                        this.scrollPane = new JScrollPane(table);
+                        this.scrollPane.setPreferredSize(new Dimension(width / 32 * 20, height / 32 * 7));
+                        this.getLOs();
+                        add(scrollPane);
+                    }
+                }
+
+                EvaluationPanel evaluationPanel;
+                private class EvaluationPanel extends JPanel {
+                    JLabel evaluationCriteria;
+                    String getEvaluationCriteria() {
+                        String selectedCourse = leftPanel.courseListPanel.list.getSelectedValue();
+                        String query = "SELECT evaluationcriteria FROM CourseInfo WHERE coursecode = \"" + selectedCourse + "\"";
+                        String evaluationCrt = "";
+                        try {
+                            out.println(query);
+                            Object response = objectInput.readObject();
+                            List<?> evaluation = (List<?>) response;
+                            @SuppressWarnings("unchecked")
+                            Map<String, String> evaluationMap = (Map<String, String>) evaluation.getFirst();
+                            if (evaluationMap != null) {
+                                String evaluationCriteria = evaluationMap.get("evaluationcriteria");
+                                evaluationCrt = evaluationCriteria.substring(1, evaluationCriteria.length() - 1);
+                                evaluationCrt = " " + evaluationCrt;
+                            } else {
+                                JOptionPane.showMessageDialog(null, "No evaluation criteria found for the selected course.",
+                                        "Info", JOptionPane.INFORMATION_MESSAGE);
+                            }
+                        } catch (IOException | ClassNotFoundException ex) {
+                            ex.printStackTrace();
+                        }
+                        return evaluationCrt;
+                    }
+
+                    public EvaluationPanel() {
+                        this.evaluationCriteria = new JLabel(this.getEvaluationCriteria());
+                        this.evaluationCriteria.setOpaque(true);
+                        this.evaluationCriteria.setBackground(Color.WHITE);
+                        this.evaluationCriteria.setBorder(BorderFactory.createLineBorder(Color.GRAY));
+                        this.evaluationCriteria.setPreferredSize(new Dimension(width / 32 * 20, height / 32));
+                        add(evaluationCriteria);
+                    }
+                }
+
                 public LoPanel() {
+                    this.tablePanel = new LOTablePanel();
+                    this.evaluationPanel = new EvaluationPanel();
                     setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
-                    setBorder(BorderFactory.createTitledBorder("Learning Outcomes"));
-                    setPreferredSize(new Dimension(width / 32 * 20, (height / 32 * 9)));
+                    add(tablePanel);
+                    add(evaluationPanel);
+                    this.tablePanel.setPreferredSize(new Dimension(width / 32 * 20, height / 32 * 7));
+                    this.evaluationPanel.setPreferredSize(new Dimension(width / 32 * 20, height / 32));
+                    setBorder(BorderFactory.createTitledBorder("Course Information"));
+                    setPreferredSize(new Dimension(width / 32 * 20, (height / 32 * 8)));
                 }
             }
 

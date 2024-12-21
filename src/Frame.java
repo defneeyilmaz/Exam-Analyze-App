@@ -819,7 +819,8 @@ public class Frame extends JFrame {
                                         @SuppressWarnings("unchecked")
                                         Map<String, Integer> countMap = (Map<String, Integer>) result1;
                                         if(countMap.get("student")==1){
-                                            String query2 = "SELECT COUNT(*) AS enrollment FROM Enrollments WHERE studentID = \""+ID+"\""+", coursecode = \""+leftPanel.courseListPanel.list.getSelectedValue()+"\"";
+                                            String query2 = "SELECT COUNT(*) AS enrollment FROM Enrollments WHERE studentID = \""+ID+"\""+"AND coursecode = \""+leftPanel.courseListPanel.list.getSelectedValue()+"\"";
+
                                             try {
                                                 out.println(query2);
                                                 Object response2 = objectInput.readObject();
@@ -828,7 +829,8 @@ public class Frame extends JFrame {
                                                     for (Object result2 : responseList2) {
                                                         @SuppressWarnings("unchecked")
                                                         Map<String, Integer> countMap2 = (Map<String, Integer>) result2;
-                                                        if(countMap2.get("enrollment")!=1){
+                                                        System.out.println(countMap2.get("enrollment"));
+                                                        if(countMap2.get("enrollment")==0){
                                                             LinkedHashMap<String, String> student = new LinkedHashMap<>();
                                                             student.put("studentID",ID); student.put("coursecode",leftPanel.courseListPanel.list.getSelectedValue());
                                                             student.put("section",section);
@@ -841,6 +843,8 @@ public class Frame extends JFrame {
                                                                 ex.printStackTrace();
                                                             }
                                                             addNewStudentToTable(new Object[]{ID,name,section},section);
+                                                        }else {
+                                                            System.out.println("aynı var");
                                                         }
                                                     }
                                                 }
@@ -904,8 +908,7 @@ public class Frame extends JFrame {
                     HashMap<String, ArrayList<Object[]>> sectionData = new HashMap<>();
                     Scanner sc;
                     try {
-
-                        sc = new Scanner(new File("students.csv"), "UTF-8");
+                        sc = new Scanner(new File(absolutePath), "UTF-8");
 
                         while (sc.hasNextLine()) {
                             String[] line = sc.nextLine().split(",");

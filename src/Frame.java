@@ -597,9 +597,16 @@ public class Frame extends JFrame {
 
             private class StudentPanel extends JPanel {
                 JTabbedPane tabbedPane;
-                ArrayList<JTable> tables = new ArrayList<>();
-                ArrayList<StudentTableModel> tableModels = new ArrayList<>();
+                ArrayList<JTable> tables;
+                ArrayList<StudentTableModel> tableModels;
+                JPanel buttonPanel;
+                JButton addButton;
+                JButton removeButton;
+                JButton seeButton;
+                JButton addAllStudentsButton;
                 public StudentPanel() {
+                    tables = new ArrayList<>();
+                    tableModels = new ArrayList<>();
                     setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
                     setBorder(BorderFactory.createTitledBorder("Students"));
                     setPreferredSize(new Dimension(width / 32 * 6, height / 32 * 15));
@@ -607,21 +614,53 @@ public class Frame extends JFrame {
                     tabbedPane = new JTabbedPane();
                     add(tabbedPane, BorderLayout.CENTER);
 
-                    JPanel buttonPanel = new JPanel(); //---- Button Panel
+                    buttonPanel = new JPanel(); //---- Button Panel
                     add(buttonPanel, BorderLayout.SOUTH);
-                    buttonPanel.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 10));
+                    buttonPanel.setLayout(new FlowLayout(FlowLayout.CENTER, 2, 10));
 
-                    JButton addButton = new JButton(" + ");
-                    addButton.setEnabled(false);
-                    JButton removeButton = new JButton(" x ");
-                    removeButton.setEnabled(false);
-                    JButton seeButton = new JButton("See");
-                    seeButton.setEnabled(false);
-                    JButton addAllStudentsButton = new JButton("Add From csv File");
+                    addButton = new JButton(" + ");
+                    removeButton = new JButton(" x ");
+                    seeButton = new JButton("See");
+                    addAllStudentsButton = new JButton("from csv");
+
                     buttonPanel.add(addButton);
                     buttonPanel.add(removeButton);
                     buttonPanel.add(seeButton);
                     buttonPanel.add(addAllStudentsButton);
+
+                    //Reading Students from db
+                    String query1 = "SELECT studentID, coursecode, section  FROM Enrollments WHERE coursecode = \""+leftPanel.courseListPanel.list.getSelectedValue()+"\"";
+                    try {
+
+                        out.println(query1);
+                        Object response1 = objectInput.readObject();
+                        if (response1 instanceof List<?> && !((List<?>) response1).isEmpty()) {
+                            List<?> responseList1 = (List<?>) response1;
+                            for (Object student1 : responseList1) {
+                                @SuppressWarnings("unchecked")
+                                Map<String, String> studentMap1 = (Map<String, String>) student1;
+                                String query2 = "SELECT name FROM Students WHERE studentID = \""+studentMap1.get("studentID")+"\"";
+                                try {
+                                    out.println(query2);
+                                    Object response2 = objectInput.readObject();
+
+                                    if (response2 instanceof List<?> && !((List<?>) response2).isEmpty()) {
+                                        List<?> responseList2 = (List<?>) response2;
+
+                                        for (Object student2 : responseList2) {
+                                            @SuppressWarnings("unchecked")
+                                            Map<String, String> studentMap2 = (Map<String, String>) student2;
+                                            addNewStudentToTable(new Object[]{studentMap1.get("studentID"),studentMap2.get("name"),studentMap1.get("section")},studentMap1.get("section"));
+                                        }
+                                    }
+                                } catch (IOException | ClassNotFoundException ex) {
+                                    ex.printStackTrace();
+                                }
+                            }
+                        }
+                    } catch (IOException | ClassNotFoundException ex) {
+                        ex.printStackTrace();
+                    }
 
                     addAllStudentsButton.addActionListener(e -> {
 
@@ -665,14 +704,9 @@ public class Frame extends JFrame {
                             if (result == JFileChooser.APPROVE_OPTION) {
                                 File selectedFile = fileChooser.getSelectedFile();
                                 JOptionPane.showMessageDialog(popUpFrame, "Selected File: " + selectedFile.getAbsolutePath());
-                                HashMap<String, ArrayList<Object[]>> sectionData = readStudentsFromCSV(selectedFile.getAbsolutePath());
 
-                                for (String section : sectionData.keySet()) {
-                                    addNewTab(sectionData.get(section), section);
-                                }
-                                addButton.setEnabled(true);
-                                removeButton.setEnabled(true);
-                                seeButton.setEnabled(true);
+                                addNewStudent(readStudentsFromCSV(selectedFile.getAbsolutePath()));
+
                                 popUpFrame.dispose();
                             } else {
                                 JOptionPane.showMessageDialog(popUpFrame, "No file selected.");
@@ -726,7 +760,11 @@ public class Frame extends JFrame {
                             }
                             String nameSurname = nameField.getText();
                             String section = sectionField.getText();
-                            addNewStudent(schoolID,nameSurname,section);
+                            HashMap<String, ArrayList<Object[]>> temp = new HashMap<>();
+                            ArrayList<Object[]> a = new ArrayList<>();
+                            a.add(new Object[]{schoolID,nameSurname,section});
+                            temp.put(section,a);
+                            addNewStudent(temp);
                             popUpFrame.dispose();
                         });
                         cancelButton.addActionListener(a -> {
@@ -751,25 +789,103 @@ public class Frame extends JFrame {
                         }
                     });
                 }
-                private void addNewStudent(String ID, String name, String section){
-                    if (tableModels.size()>=Integer.parseInt(section)) {
+                private void addNewStudentToTable(Object[] student, String section){
+                    if (tables.size()>=Integer.parseInt(section)) {
                         String tab = tabbedPane.getTitleAt(Integer.parseInt(section) - 1);
                         String tabSection = tab.split(" ")[1];
-                        StudentTableModel temp = tableModels.get(Integer.parseInt(tabSection)-1);
-                        temp.addRow(new Object[]{ID, name, section});
+                        StudentTableModel temp = (StudentTableModel) tables.get(Integer.parseInt(tabSection)-1).getModel();
+                        temp.addRow(student);
                     }else{
                         ArrayList<Object[]> temp = new ArrayList<>();
-                        temp.add(new Object[]{ID, name, section});
+                        temp.add(student);
                         addNewTab(temp,section);
                     }
+                }
+                private void addNewStudent(HashMap<String, ArrayList<Object[]>> data){
+                    String ID;
+                    String name;
+                    for (String section : data.keySet()) {
+                        for (Object[] temp : data.get(section)) {
+                            ID = (String) temp[0];
+                            name = (String) temp[1];
+                            String query1 = "SELECT COUNT(*) AS student FROM Students WHERE studentID = \""+ID+"\"";
+                            try {
+                                out.println(query1);
+                                Object response1 = objectInput.readObject();
+                                if (response1 instanceof List<?> && !((List<?>) response1).isEmpty()) {
+                                    List<?> responseList1 = (List<?>) response1;
 
+                                    for (Object result1 : responseList1) {
+                                        @SuppressWarnings("unchecked")
+                                        Map<String, Integer> countMap = (Map<String, Integer>) result1;
+                                        if(countMap.get("student")==1){
+                                            String query2 = "SELECT COUNT(*) AS enrollment FROM Enrollments WHERE studentID = \""+ID+"\""+", coursecode = \""+leftPanel.courseListPanel.list.getSelectedValue()+"\"";
+                                            try {
+                                                out.println(query2);
+                                                Object response2 = objectInput.readObject();
+                                                if (response2 instanceof List<?> && !((List<?>) response2).isEmpty()) {
+                                                    List<?> responseList2 = (List<?>) response2;
+                                                    for (Object result2 : responseList2) {
+                                                        @SuppressWarnings("unchecked")
+                                                        Map<String, Integer> countMap2 = (Map<String, Integer>) result2;
+                                                        if(countMap2.get("enrollment")!=1){
+                                                            LinkedHashMap<String, String> student = new LinkedHashMap<>();
+                                                            student.put("studentID",ID); student.put("coursecode",leftPanel.courseListPanel.list.getSelectedValue());
+                                                            student.put("section",section);
+                                                            String insert = insertInto("Enrollments",student);
+                                                            try {
+                                                                out.println(insert);
+                                                                String response_ = in.readLine();
+                                                                System.out.println(response_);
+                                                            } catch (IOException ex) {
+                                                                ex.printStackTrace();
+                                                            }
+                                                            addNewStudentToTable(new Object[]{ID,name,section},section);
+                                                        }
+                                                    }
+                                                }
+                                            }catch (IOException | ClassNotFoundException ex) {
+                                                ex.printStackTrace();
+                                            }
+                                        }else{
+                                            LinkedHashMap<String, String> student = new LinkedHashMap<>();
+                                            student.put("studentID",ID); student.put("name",name);
+                                            String insert1 = insertInto("Students",student);
+                                            try {
+                                                out.println(insert1);
+                                                String response_ = in.readLine();
+                                                System.out.println(response_);
+                                            } catch (IOException ex) {
+                                                ex.printStackTrace();
+                                            }
+                                            LinkedHashMap<String, String> studentEnrollment = new LinkedHashMap<>();
+                                            studentEnrollment.put("studentID",ID); studentEnrollment.put("coursecode",leftPanel.courseListPanel.list.getSelectedValue());
+                                            studentEnrollment.put("section",section);
+                                            String insert2 = insertInto("Enrollments",studentEnrollment);
+                                            try {
+                                                out.println(insert2);
+                                                String response_ = in.readLine();
+                                                System.out.println(response_);
+                                            } catch (IOException ex) {
+                                                ex.printStackTrace();
+                                            }
+                                            addNewStudentToTable(new Object[]{ID,name,section},section);
+                                        }
+                                    }
+                                }
+                            } catch (IOException | ClassNotFoundException ex) {
+                                ex.printStackTrace();
+                            }
+                        }
+                    }
                 }
                 private void addNewTab(ArrayList<Object[]> sectionData, String section) {
                     StudentTableModel tableModel = new StudentTableModel(sectionData);
                     JTable table = new JTable(tableModel);
                     JScrollPane scrollPane = new JScrollPane(table);
-                    tableModels.add(tableModel);
                     tables.add(table);
+
+
                     table.setRowHeight(height / 16);
                     table.setAutoCreateRowSorter(true);
 
@@ -790,16 +906,15 @@ public class Frame extends JFrame {
                     try {
 
                         sc = new Scanner(new File("students.csv"), "UTF-8");
-                        // System.out.println(sc.hasNextLine());
+
                         while (sc.hasNextLine()) {
                             String[] line = sc.nextLine().split(",");
                             if (line[0].trim().replace(" ", "").matches("^[1-9]\\d{10}$")) {
-                                String schoolID = line[0].trim();
+                                String ID = line[0].trim();
                                 String nameSurname = line[1].trim();
                                 String section = line[2].trim();
-
                                 sectionData.putIfAbsent(section, new ArrayList<>());
-                                sectionData.get(section).add(new Object[]{schoolID, nameSurname, section});
+                                sectionData.get(section).add(new Object[]{ID, nameSurname, section});
                             }
                         }
                     } catch (Exception e) {

@@ -154,8 +154,6 @@ public class Server {
                     }
                 }
             }
-
-            System.out.println("sj");
         } catch (SQLException ex) {
             System.err.println("Database setup error: " + ex.getMessage());
         }

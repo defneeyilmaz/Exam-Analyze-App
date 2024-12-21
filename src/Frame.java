@@ -8,15 +8,14 @@ import java.io.PrintWriter;
 import java.net.*;
 import java.util.*;
 import java.util.List;
-import java.util.function.DoubleToIntFunction;
 import javax.swing.Timer;
+import javax.swing.border.TitledBorder;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.JTableHeader;
 import javax.swing.table.TableColumnModel;
-import javax.swing.text.TableView;
 
 public class Frame extends JFrame {
     private static final String SERVER_ADDRESS = "localhost";
@@ -557,7 +556,7 @@ public class Frame extends JFrame {
                             Map<String, String> evaluationMap = (Map<String, String>) evaluation.get(0);
                             if (evaluationMap != null) {
                                 String evaluationCriteria = evaluationMap.get("evaluationcriteria");
-                                evaluationCrt = evaluationCriteria.substring(1);
+                                evaluationCrt = evaluationCriteria.substring(1,evaluationCriteria.length()-1);
                                 evaluationCrt = " " + evaluationCrt;
                             } else {
                                 JOptionPane.showMessageDialog(null, "No evaluation criteria found for the selected course.",
@@ -606,7 +605,6 @@ public class Frame extends JFrame {
                 JButton addAllStudentsButton;
                 public StudentPanel() {
                     tables = new ArrayList<>();
-                    tableModels = new ArrayList<>();
                     setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
                     setBorder(BorderFactory.createTitledBorder("Students"));
                     setPreferredSize(new Dimension(width / 32 * 6, height / 32 * 15));
@@ -616,51 +614,20 @@ public class Frame extends JFrame {
 
                     buttonPanel = new JPanel(); //---- Button Panel
                     add(buttonPanel, BorderLayout.SOUTH);
-                    buttonPanel.setLayout(new FlowLayout(FlowLayout.CENTER, 2, 10));
+                    buttonPanel.setLayout(new GridLayout(0,2));
 
-                    addButton = new JButton(" + ");
-                    removeButton = new JButton(" x ");
+                    addButton = new JButton("Add");
+                    removeButton = new JButton("Delete");
                     seeButton = new JButton("See");
-                    addAllStudentsButton = new JButton("from csv");
+                    addAllStudentsButton = new JButton("Add from csv file");
 
                     buttonPanel.add(addButton);
                     buttonPanel.add(removeButton);
                     buttonPanel.add(seeButton);
                     buttonPanel.add(addAllStudentsButton);
+                    buttonPanel.setPreferredSize(new Dimension(width / 32 *6, height / 32 * 2));
 
-                    //Reading Students from db
-                    String query1 = "SELECT studentID, coursecode, section  FROM Enrollments WHERE coursecode = \""+leftPanel.courseListPanel.list.getSelectedValue()+"\"";
-                    try {
-
-                        out.println(query1);
-                        Object response1 = objectInput.readObject();
-                        if (response1 instanceof List<?> && !((List<?>) response1).isEmpty()) {
-                            List<?> responseList1 = (List<?>) response1;
-                            for (Object student1 : responseList1) {
-                                @SuppressWarnings("unchecked")
-                                Map<String, String> studentMap1 = (Map<String, String>) student1;
-                                String query2 = "SELECT name FROM Students WHERE studentID = \""+studentMap1.get("studentID")+"\"";
-                                try {
-                                    out.println(query2);
-                                    Object response2 = objectInput.readObject();
-
-                                    if (response2 instanceof List<?> && !((List<?>) response2).isEmpty()) {
-                                        List<?> responseList2 = (List<?>) response2;
-
-                                        for (Object student2 : responseList2) {
-                                            @SuppressWarnings("unchecked")
-                                            Map<String, String> studentMap2 = (Map<String, String>) student2;
-                                            addNewStudentToTable(new Object[]{studentMap1.get("studentID"),studentMap2.get("name"),studentMap1.get("section")},studentMap1.get("section"));
-                                        }
-                                    }
-                                } catch (IOException | ClassNotFoundException ex) {
-                                    ex.printStackTrace();
-                                }
-                            }
-                        }
-                    } catch (IOException | ClassNotFoundException ex) {
-                        ex.printStackTrace();
-                    }
+                    populateTable();
 
                     addAllStudentsButton.addActionListener(e -> {
 
@@ -773,21 +740,143 @@ public class Frame extends JFrame {
                     });
                     removeButton.addActionListener(e -> {
                         int selectedIndex = tabbedPane.getSelectedIndex();
-                        StudentTableModel tempModel = tableModels.get(selectedIndex);
                         JTable tempTable = tables.get(selectedIndex);
+                        StudentTableModel tempModel = (StudentTableModel) tables.get(selectedIndex).getModel();
                         int selectedRow = tempTable.getSelectedRow();
                         if (selectedRow != -1) {
                             int confirm = JOptionPane.showConfirmDialog(this,
                                     "Are you sure about removing the selected row?",
                                     "Confirm", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
                             if (confirm == JOptionPane.YES_OPTION) {
+                                String ID = (String) tempModel.getValueAt(selectedRow,0);
                                 tempModel.removeSelectedRow(selectedRow);
+                                String delete = "DELETE FROM Enrollments WHERE studentID = \"" + ID +"\"";
+                                try {
+                                    out.println(delete);
+                                    String response = in.readLine();
+                                    System.out.println("Server response: " + response);
+                                } catch (IOException ex) {
+                                    ex.printStackTrace();
+                                }
                             }
                         } else {
                             JOptionPane.showMessageDialog(this,
                                     "No row selected to remove.", "Error", JOptionPane.ERROR_MESSAGE);
                         }
                     });
+                    seeButton.addActionListener(e ->{
+                        int selectedIndex = tabbedPane.getSelectedIndex();
+                        JTable tempTable = tables.get(selectedIndex);
+                        StudentTableModel tableModel = (StudentTableModel) tables.get(selectedIndex).getModel();
+                        int selectedRow = tempTable.getSelectedRow();
+                        if (selectedRow != -1) {
+                            String studentID="";
+                            String name="";
+                            String section="";
+                            try {
+                                Object[] info = (Object[]) tableModel.getRow(selectedRow);
+                                studentID = (String) info[0];
+                                name = (String) info[1];
+                                section = (String) info[2];
+                            }catch (ClassCastException ex){
+                                ex.printStackTrace();
+                            }
+
+                            JFrame popUpFrame = new JFrame("Student Information");
+                            popUpFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+                            popUpFrame.setSize(width / 5 * 2, height / 5 * 2);
+                            popUpFrame.setLocationRelativeTo(null);
+
+
+                            JPanel container = new JPanel();
+                            container.setLayout(new BorderLayout());
+
+
+                            JPanel left = new JPanel();
+                            left.setBorder(new TitledBorder(""));
+                            left.add(new JLabel("aaa"));
+
+                            left.setLayout(new FlowLayout(FlowLayout.CENTER));
+
+
+                            JPanel right = new JPanel();
+                            right.setBorder(new TitledBorder(""));
+
+
+
+                            JPanel info = new JPanel();
+
+                            info.setLayout(new BoxLayout(info, BoxLayout.Y_AXIS));
+                            info.add(new JLabel("Name: " + name));
+                            info.add(new JLabel("Student ID: " + studentID));
+                            info.add(new JLabel("Section: " + section));
+
+
+                            JPanel LO = new JPanel();
+                            LO.setLayout(new GridLayout(0, 2));
+
+                            ArrayList<JTextField> textFields = new ArrayList<>();
+                            for (int i = 1; i <= loPanel.tablePanel.tableModel.getRowCount(); i++) {
+                                LO.add(new JLabel("LO" + i + ":"));
+                                JTextField textField = new JTextField();
+                                textField.setEnabled(false);
+                                textField.setText("");
+                                textFields.add(textField);
+                                LO.add(textField);
+                            }
+
+
+                            right.add(info);
+                            right.add(LO);
+
+                            right.setLayout(new BoxLayout(right,BoxLayout.Y_AXIS));
+
+                            container.add(left);
+                            container.add(right);
+                            container.setLayout(new FlowLayout(FlowLayout.LEFT));
+
+                            popUpFrame.add(container, BorderLayout.CENTER);
+                            popUpFrame.setVisible(true);
+
+                        }else{
+                            JOptionPane.showMessageDialog(this,
+                                    "No row selected.", "Error", JOptionPane.ERROR_MESSAGE);
+                        }
+                    });
+                }
+                private void populateTable(){
+                    String query1 = "SELECT studentID, coursecode, section  FROM Enrollments WHERE coursecode = \""+leftPanel.courseListPanel.list.getSelectedValue()+"\"";
+                    try {
+
+                        out.println(query1);
+                        Object response1 = objectInput.readObject();
+                        if (response1 instanceof List<?> && !((List<?>) response1).isEmpty()) {
+                            List<?> responseList1 = (List<?>) response1;
+                            for (Object student1 : responseList1) {
+                                @SuppressWarnings("unchecked")
+                                Map<String, String> studentMap1 = (Map<String, String>) student1;
+                                String query2 = "SELECT name FROM Students WHERE studentID = \""+studentMap1.get("studentID")+"\"";
+                                try {
+                                    out.println(query2);
+                                    Object response2 = objectInput.readObject();
+
+                                    if (response2 instanceof List<?> && !((List<?>) response2).isEmpty()) {
+                                        List<?> responseList2 = (List<?>) response2;
+
+                                        for (Object student2 : responseList2) {
+                                            @SuppressWarnings("unchecked")
+                                            Map<String, String> studentMap2 = (Map<String, String>) student2;
+                                            addNewStudentToTable(new Object[]{studentMap1.get("studentID"),studentMap2.get("name"),studentMap1.get("section")},studentMap1.get("section"));
+                                        }
+                                    }
+                                } catch (IOException | ClassNotFoundException ex) {
+                                    ex.printStackTrace();
+                                }
+                            }
+                        }
+                    } catch (IOException | ClassNotFoundException ex) {
+                        ex.printStackTrace();
+                    }
                 }
                 private void addNewStudentToTable(Object[] student, String section){
                     if (tables.size()>=Integer.parseInt(section)) {
@@ -891,7 +980,7 @@ public class Frame extends JFrame {
 
 
                     table.setRowHeight(height / 16);
-                    table.setAutoCreateRowSorter(true);
+                    table.setAutoCreateRowSorter(false);
 
                     TableColumnModel columnModel = table.getColumnModel();
                     columnModel.getColumn(0).setPreferredWidth(width / 64 * 4);
@@ -946,7 +1035,9 @@ public class Frame extends JFrame {
                     public Object getValueAt(int row, int col) {
                         return data.get(row)[col];
                     }
-
+                    public Object getRow(int row){
+                        return data.get(row);
+                    }
                     public String getColumnName(int col) {
                         return columnNames[col];
                     }
@@ -959,7 +1050,7 @@ public class Frame extends JFrame {
                         if (row >= 0 && row < data.size()) {
                             data.remove(row);
                             fireTableRowsDeleted(row, row);
-                            fireTableDataChanged();
+
                         }
                     }
                 }

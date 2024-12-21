@@ -73,25 +73,26 @@ public class Server {
                     )
                     """;
             String questions = """
-                    CREATE TABLE IF NOT EXISTS "Questions" (
-                    	"coursecode"	TEXT,
-                    	"question"	TEXT,
-                    	"answer"	TEXT,
-                    	"possiblepoint"	INTEGER DEFAULT 0,
-                    	"LO"	TEXT,
-                    	"questionID"	TEXT,
-                    	"examID"	TEXT,
-                    	PRIMARY KEY("questionID"),
-                    	FOREIGN KEY("coursecode") REFERENCES "CourseInfo"("coursecode"),
-                    	FOREIGN KEY("examID") REFERENCES "Exams"("examID")
-                    )
+                    CREATE TABLE "Questions" (
+                     	"coursecode"	TEXT,
+                     	"question"	TEXT,
+                     	"answer"	TEXT,
+                     	"possiblepoint"	TEXT DEFAULT 0,
+                     	"LO"	TEXT,
+                     	"questionID"	TEXT,
+                     	"examID"	TEXT,
+                     	PRIMARY KEY("questionID"),
+                     	FOREIGN KEY("coursecode") REFERENCES "CourseInfo"("coursecode"),
+                     	FOREIGN KEY("examID") REFERENCES "Exams"("examID")
+                     )
                     """;
             String exams = """
-                    CREATE TABLE IF NOT EXISTS "Exams" (
+                    CREATE TABLE "Exams" (
                     	"coursecode"	TEXT,
                     	"examtype"	TEXT,
-                    	"examname"  TEXT,
+                    	"examname"	TEXT,
                     	"examID"	TEXT,
+                    	"los"	TEXT,
                     	PRIMARY KEY("examID"),
                     	FOREIGN KEY("coursecode") REFERENCES "CourseInfo"("coursecode")
                     )

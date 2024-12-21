@@ -13,9 +13,7 @@ import javax.swing.border.TitledBorder;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.filechooser.FileFilter;
-import javax.swing.table.AbstractTableModel;
-import javax.swing.table.JTableHeader;
-import javax.swing.table.TableColumnModel;
+import javax.swing.table.*;
 
 public class Frame extends JFrame {
     private static final String SERVER_ADDRESS = "localhost";
@@ -581,7 +579,8 @@ public class Frame extends JFrame {
                 public LoPanel() {
                     this.tablePanel = new LOTablePanel();
                     this.evaluationPanel = new EvaluationPanel();
-                    this.tablePanel.setPreferredSize(new Dimension(width / 32 * 20, height / 32 * 7));                    setLayout(new BorderLayout());
+                    this.tablePanel.setPreferredSize(new Dimension(width / 32 * 20, height / 32 * 7));
+                    setLayout(new BorderLayout());
                     this.evaluationPanel.setPreferredSize(new Dimension(width / 32 * 20, height / 32));
                     add(tablePanel, BorderLayout.CENTER);
                     add(evaluationPanel, BorderLayout.SOUTH);
@@ -1431,9 +1430,592 @@ public class Frame extends JFrame {
             JPanel examPanel;
 
             private class ExamPanel extends JPanel {
+                ExamTableModel tableModel;
+                JTable table;
+                JScrollPane scrollPane;
+                ButtonPanel buttonPanel;
+
                 public ExamPanel() {
-                    setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
+                    this.tableModel = new ExamTableModel();
+                    this.table = new JTable(this.tableModel);
+                    this.scrollPane = new JScrollPane(this.table);
+                    this.buttonPanel = new ButtonPanel();
+
+                    int tableWidth = width / 32 * 14;
+                    TableColumnModel columnModel = this.table.getColumnModel();
+                    columnModel.getColumn(0).setPreferredWidth(tableWidth / 28 * 2);
+                    columnModel.getColumn(1).setPreferredWidth(tableWidth / 28 * 10);
+                    columnModel.getColumn(2).setPreferredWidth(tableWidth / 28 * 10);
+                    columnModel.getColumn(3).setPreferredWidth(tableWidth / 28 * 6);
+                    this.table.setRowHeight(tableWidth / 64 * 4);
+                    this.table.setAutoCreateRowSorter(true);
+
+                    setPreferredSize(new Dimension(width / 32 * 14, height / 32 * 8));
+                    setLayout(new BorderLayout());
                     setBorder(BorderFactory.createTitledBorder("Exams"));
+
+                    add(this.scrollPane, BorderLayout.CENTER);
+                    add(this.buttonPanel, BorderLayout.SOUTH);
+                }
+
+                private class ButtonPanel extends JPanel {
+                    JButton createButton;
+                    JButton removeButton;
+                    JButton viewExamButton;
+
+                    public ButtonPanel() {
+                        this.createButton = new JButton("Create Exam");
+                        this.removeButton = new JButton("Remove Exam");
+                        this.viewExamButton = new JButton("View Exam");
+
+                        this.createButton.addActionListener(new CreateExamButtonListener());
+                        this.removeButton.addActionListener(new RemoveExamButtonListener());
+                        this.viewExamButton.addActionListener(new ViewExamButtonListener());
+
+                        setLayout(new FlowLayout(FlowLayout.CENTER));
+                        add(this.createButton);
+                        add(this.removeButton);
+                        add(this.viewExamButton);
+                    }
+                }
+
+                private class CreateExamButtonListener implements ActionListener {
+                    private int selectedQuestionRow = -1;  // This will store the selected row index
+
+                    @Override
+                    public void actionPerformed(ActionEvent event) {
+                        JFrame popUpFrame = new JFrame("Create Exam");
+                        JPanel mainPanel = new JPanel(new BorderLayout());
+
+                        QuestionTableModel questionTableModel = new QuestionTableModel();
+                        ButtonPanelInPopUp buttonPanelInPopUp = new ButtonPanelInPopUp(this, questionTableModel);
+                        JTable questionTable = new JTable(questionTableModel);
+                        questionTable.getColumnModel().getColumn(4).setCellEditor(new DefaultCellEditor(new JTextField()));
+                        questionTable.getColumnModel().getColumn(4).setCellRenderer(new DefaultTableCellRenderer());
+                        questionTable.getColumnModel().getColumn(5).setCellEditor(new DefaultCellEditor(new JCheckBox()));
+                        questionTable.getColumnModel().getColumn(5).setCellRenderer(new QuestionTableModel().new CheckboxRenderer(Color.WHITE));
+
+                        questionTable.getSelectionModel().addListSelectionListener(e -> {
+                            selectedQuestionRow = questionTable.getSelectedRow();
+                        });
+                        JScrollPane questionScrollPane = new JScrollPane(questionTable);
+                        questionScrollPane.setBorder(BorderFactory.createLineBorder(Color.BLACK, 1));
+                        questionTable.setRowHeight(width / 32);
+
+                        mainPanel.setLayout(new BorderLayout());
+                        mainPanel.add(questionScrollPane, BorderLayout.CENTER);
+                        mainPanel.add(buttonPanelInPopUp, BorderLayout.SOUTH);
+
+                        popUpFrame.add(mainPanel);
+                        popUpFrame.setSize(720, 405);
+                        popUpFrame.setResizable(false);
+                        popUpFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+                        popUpFrame.setLocation(width / 4, height / 4);
+                        popUpFrame.setVisible(true);
+                    }
+
+                    public int getSelectedQuestionRow() {
+                        return selectedQuestionRow;
+                    }
+                }
+
+                //Button panel inside the pop-up frame
+                private class ButtonPanelInPopUp extends JPanel {
+                    JButton createExamButton;
+                    JButton showQuestionButton;
+                    JButton cancelButton;
+                    private CreateExamButtonListener createExamButtonListener;
+                    private QuestionTableModel questionTableModel;
+
+                    public ButtonPanelInPopUp(CreateExamButtonListener createExamButtonListener, QuestionTableModel questionTableModel) {
+                        this.createExamButtonListener = createExamButtonListener;
+                        this.questionTableModel = questionTableModel;
+
+                        this.createExamButton = new JButton("Create");
+                        this.showQuestionButton = new JButton("See Selected Question");
+                        this.cancelButton = new JButton("Cancel");
+
+                        setLayout(new FlowLayout(FlowLayout.CENTER));
+                        add(this.createExamButton);
+                        add(this.showQuestionButton);
+                        add(this.cancelButton);
+
+
+                        this.createExamButton.addActionListener(new ActionListener() {
+                            @Override
+                            public void actionPerformed(ActionEvent e) {
+                                List<Object[]> selectedQuestions = new ArrayList<>();
+
+                                for (int row = 0; row < questionTableModel.getRowCount(); row++) {
+                                    Boolean isSelected = (Boolean) questionTableModel.getValueAt(row, 5);
+                                    String pointString = (String) questionTableModel.getValueAt(row, 4);
+                                    if (isSelected != null && isSelected) {
+                                        if (pointString == null || pointString.isEmpty()) {
+                                            JOptionPane.showMessageDialog(null, "Please enter points for all selected questions.", "Error", JOptionPane.ERROR_MESSAGE);
+                                            return;
+                                        }
+
+                                        try {
+                                            Integer.parseInt(pointString);
+                                            selectedQuestions.add((Object[]) questionTableModel.getRow(row));
+                                        } catch (NumberFormatException ex) {
+                                            JOptionPane.showMessageDialog(null, "Invalid point value. Please enter a valid integer.", "Error", JOptionPane.ERROR_MESSAGE);
+                                            return;
+                                        }
+                                    }
+                                }
+
+                                if (!selectedQuestions.isEmpty()) {
+                                    JPanel panel = new JPanel();
+                                    panel.setLayout(new GridLayout(0,1));
+
+                                    JTextField examNameField = new JTextField(20);
+                                    JTextField examTypeField = new JTextField(20);
+                                    panel.add(new JLabel("Enter Exam Name:"));
+                                    panel.add(examNameField);
+                                    panel.add(Box.createVerticalStrut(10));
+                                    panel.add(new JLabel("Enter Exam Type:"));
+                                    panel.add(examTypeField);
+
+                                    int option = JOptionPane.showConfirmDialog(null, panel, "Create Exam", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+
+                                    if (option == JOptionPane.OK_OPTION) {
+                                        String examName = examNameField.getText().trim();
+                                        String examType = examTypeField.getText().trim();
+
+                                        if (examName.isEmpty()) {
+                                            JOptionPane.showMessageDialog(null, "Exam name cannot be empty!", "Error", JOptionPane.ERROR_MESSAGE);
+                                            return;
+                                        }
+
+                                        if (examType.isEmpty()) {
+                                            JOptionPane.showMessageDialog(null, "You must select an Exam Type.", "Error", JOptionPane.ERROR_MESSAGE);
+                                            return;
+                                        } else {
+                                            createExamFromSelectedQuestions(examName, examType, selectedQuestions);
+                                            ((JFrame) SwingUtilities.getWindowAncestor(ButtonPanelInPopUp.this)).dispose();
+                                        }
+                                    }
+
+                                } else {
+                                    JOptionPane.showMessageDialog(null, "No questions selected!", "Error", JOptionPane.ERROR_MESSAGE);
+                                }
+
+                            }
+                        });
+
+
+                        this.showQuestionButton.addActionListener(new ActionListener() {
+                            @Override
+                            public void actionPerformed(ActionEvent e) {
+                                int selectedRow = createExamButtonListener.getSelectedQuestionRow();
+                                if (selectedRow >= 0) {
+                                    String question = "";
+                                    String answer = "";
+                                    String LOs = "";
+                                    try {
+                                        Object[] info = (Object[]) questionTableModel.getRow(selectedRow);
+                                        question = (String) info[1];
+                                        answer = (String) info[2];
+                                        LOs = (String) info[3];
+                                    } catch (ClassCastException ex) {
+                                        ex.printStackTrace();
+                                    }
+
+                                    JFrame popUpFrame = new JFrame("Question");
+                                    popUpFrame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+                                    popUpFrame.setSize(640, 480);
+                                    popUpFrame.setLocationRelativeTo(null);
+                                    popUpFrame.setLayout(new BoxLayout(popUpFrame.getContentPane(), BoxLayout.Y_AXIS));
+                                    JPanel textPanel = new JPanel();
+
+                                    JTextArea textArea1 = new JTextArea();
+                                    textArea1.setEditable(false);
+                                    textArea1.setLineWrap(true);
+                                    textArea1.setWrapStyleWord(true);
+                                    textPanel.add(new JLabel("Question"));
+                                    textPanel.add(textArea1);
+                                    textArea1.setText(question);
+                                    textArea1.setBorder(BorderFactory.createTitledBorder(""));
+
+                                    JTextArea textArea2 = new JTextArea();
+                                    textArea2.setEditable(false);
+                                    textArea2.setLineWrap(true);
+                                    textArea2.setWrapStyleWord(true);
+                                    textPanel.add(new JLabel("Answer"));
+                                    textPanel.add(textArea2);
+                                    textArea2.setText(answer);
+                                    textArea2.setBorder(BorderFactory.createTitledBorder(""));
+
+                                    textPanel.setLayout(new BoxLayout(textPanel, BoxLayout.Y_AXIS));
+                                    textPanel.setPreferredSize(new Dimension(640, 380));
+
+                                    JButton okButton = new JButton("OK");
+                                    okButton.addActionListener(o -> popUpFrame.dispose());
+
+                                    popUpFrame.add(textPanel);
+                                    popUpFrame.add(new Label("Learning Outcomes: " + LOs));
+                                    popUpFrame.add(okButton);
+
+                                    popUpFrame.setVisible(true);
+                                } else {
+                                    JOptionPane.showMessageDialog(Frame.super.rootPane,
+                                            "No row selected.", "Error", JOptionPane.ERROR_MESSAGE);
+                                }
+                            }
+                        });
+
+                        this.cancelButton.addActionListener(new ActionListener() {
+                            @Override
+                            public void actionPerformed(ActionEvent e) {
+                                ((JFrame) SwingUtilities.getWindowAncestor(ButtonPanelInPopUp.this)).dispose();
+                            }
+                        });
+                    }
+                }
+
+                private void createExamFromSelectedQuestions(String name, String type, List<Object[]> selectedQuestions) {
+                    String examName = name;
+                    String examType = type;
+                    String ID = createID();
+                    Set<String> los = new HashSet<>();
+
+                    int totalPoints = 0;
+                    for (Object[] question : selectedQuestions) {
+                        String losString = (String) question[3];
+                        String pointsString = (String) question[4];
+
+                        try {
+                            int point = Integer.parseInt(pointsString);
+                            totalPoints += point;
+                        } catch (NumberFormatException e) {
+                            e.printStackTrace();
+                            return;
+                        }
+
+                        String[] individualLOs = losString.split(",");
+                        for (String lo : individualLOs) {
+                            los.add(lo.trim());
+                        }
+                    }
+                    if (totalPoints != 100) {
+                        JOptionPane.showMessageDialog(null,"Total points must equal 100!", "Error", JOptionPane.ERROR_MESSAGE);
+                        return;
+                    }
+                    List<String> sortedLOs = new ArrayList<>(los);
+                    Collections.sort(sortedLOs);
+                    String losString = String.join(", ", sortedLOs);
+
+                    LinkedHashMap<String, String> temp = new LinkedHashMap<>();
+                    temp.put("coursecode", leftPanel.courseListPanel.list.getSelectedValue());
+                    temp.put("examtype", examType);
+                    temp.put("examname", examName);
+                    temp.put("examID", ID);
+                    temp.put("los", losString);
+                    String createExam = insertInto("Exams", temp);
+                    try {
+                        out.println(createExam);
+                        String response = in.readLine();
+                        System.out.println(response);
+                        tableModel.addRow(new Object[]{ID, examName, examType, losString});
+                    } catch (IOException ex) {
+                        ex.printStackTrace();
+                    }
+
+                    //"ID", "Question", "Answer", "Learning Outcomes", "Point", "Select"
+                    LinkedHashMap<String, String> addQuestion = new LinkedHashMap<>();
+                    for (Object[] question : selectedQuestions) {
+                        addQuestion.put("coursecode", leftPanel.courseListPanel.list.getSelectedValue());
+                        addQuestion.put("question", question[1].toString());
+                        addQuestion.put("answer", question[2].toString());
+                        addQuestion.put("possiblepoint", question[4].toString());
+                        addQuestion.put("LO", question[3].toString());
+                        addQuestion.put("questionID", (question[0]+ID));
+                        addQuestion.put("examID", ID);
+                        String newQuestion = insertInto("Questions", addQuestion);
+                        System.out.println(newQuestion);
+                        try {
+                            out.println(newQuestion);
+                            String response = in.readLine();
+                            System.out.println(response);
+                        } catch (IOException ex) {
+                            ex.printStackTrace();
+                        }
+                    }
+                }
+
+                // Table model for the list of exams (shown in the main ExamPanel)
+                private class ExamTableModel extends AbstractTableModel {
+                    private String[] columnNames = {"ID", "Name", "Exam Type", "LO's"};
+                    private ArrayList<Object[]> data = new ArrayList<>();
+
+                    public int getColumnCount() {
+                        return columnNames.length;
+                    }
+
+                    public int getRowCount() {
+                        return data.size();
+                    }
+
+                    public Object getValueAt(int row, int col) {
+                        return data.get(row)[col];
+                    }
+
+                    public String getColumnName(int col) {
+                        return columnNames[col];
+                    }
+
+                    public void addRow(Object[] rowData) {
+                        data.add(rowData);
+                        fireTableRowsInserted(data.size() - 1, data.size() - 1);
+                    }
+
+                    public void removeSelectedRow(int row) {
+                        if (row >= 0 && row < data.size()) {
+                            data.remove(row);
+                            fireTableRowsDeleted(row, row);
+                        }
+                    }
+
+                    public ExamTableModel() {
+                        String getExams = "SELECT * FROM Exams WHERE coursecode = \"" + leftPanel.courseListPanel.list.getSelectedValue() + "\"";
+                        try {
+                            out.println(getExams);
+                            Object response = objectInput.readObject();
+                            if (response instanceof List<?> && !((List<?>) response).isEmpty()) {
+                                List<?> responseList = (List<?>) response;
+                                for (Object exam : responseList) {
+                                    @SuppressWarnings("unchecked")
+                                    Map<String, String> examMap = (Map<String, String>) exam;
+                                    addRow(new Object[]{examMap.get("examID"), examMap.get("examname"), examMap.get("examtype"), examMap.get("los")});
+                                }
+                            }
+                        } catch (IOException | ClassNotFoundException ex) {
+                            ex.printStackTrace();
+                        }
+                    }
+                }
+
+                // Table model for the questions inside the pop-up "Create Exam" frame
+                private class QuestionTableModel extends AbstractTableModel {
+                    private String[] columnNames = {"ID", "Question", "Answer", "Learning Outcomes", "Point", "Select"};
+                    private ArrayList<Object[]> data = new ArrayList<>();
+
+                    public int getColumnCount() {
+                        return columnNames.length;
+                    }
+
+                    public int getRowCount() {
+                        return data.size();
+                    }
+
+                    public Object getValueAt(int row, int col) {
+                        return data.get(row)[col];
+                    }
+
+                    public void setValueAt(Object value, int row, int col) {
+                        if (col == 4) {
+                            try {
+                                int pointValue = Integer.parseInt((String) value);
+                                if (pointValue < 0 || pointValue > 100) {
+                                    throw new NumberFormatException("Points must be between 0 and 100.");
+                                }
+                                data.get(row)[col] = value;
+                                fireTableCellUpdated(row, col);
+                            } catch (NumberFormatException e) {
+                                JOptionPane.showMessageDialog(null, "Invalid point value. Please enter a valid integer between 0 and 100.", "Error", JOptionPane.ERROR_MESSAGE);
+                            }
+                        } else if (col == 5) {
+                            data.get(row)[col] = value;
+                            fireTableCellUpdated(row, col);
+                        }
+                    }
+
+                    public boolean isCellEditable(int row, int col) {
+                        if (col == 4) {
+                            Boolean isSelected = (Boolean) data.get(row)[5];
+                            return isSelected != null && isSelected;
+                        }
+                        return col == 5;
+                    }
+
+                    public String getColumnName(int col) {
+                        return columnNames[col];
+                    }
+
+                    public void addRow(Object[] rowData) {
+                        data.add(rowData);
+                        fireTableRowsInserted(data.size() - 1, data.size() - 1);
+                    }
+
+                    public QuestionTableModel() {
+                        String getQuestions = "SELECT questionID ,question ,answer ,LO FROM Questions WHERE coursecode = \""
+                                + leftPanel.courseListPanel.list.getSelectedValue() + "\"" + " AND possiblepoint = \"0\";";
+                        System.out.println(getQuestions);
+                        try {
+                            out.println(getQuestions);
+                            Object response = objectInput.readObject();
+
+                            if (response instanceof List<?> && !((List<?>) response).isEmpty()) {
+                                List<?> responseList = (List<?>) response;
+                                for (Object question : responseList) {
+                                    @SuppressWarnings("unchecked")
+                                    Map<String, String> questionMap = (Map<String, String>) question;
+                                    addRow(new Object[]{
+                                            questionMap.get("questionID"),
+                                            questionMap.get("question"),
+                                            questionMap.get("answer"),
+                                            questionMap.get("LO"),
+                                            "",
+                                            false
+                                    });
+                                }
+                            }
+                        } catch (IOException | ClassNotFoundException ex) {
+                            ex.printStackTrace();
+                        }
+                    }
+
+                    public class CheckboxRenderer extends JCheckBox implements TableCellRenderer {
+                        @Override
+                        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+                            setSelected(value != null && (Boolean) value);
+                            setBackground(backgroundColor);
+
+                            if (isSelected) {
+                                setBackground(table.getSelectionBackground());
+                            }
+                            return this;
+                        }
+                        private Color backgroundColor;
+                        public CheckboxRenderer(Color backgroundColor) {
+                            this.backgroundColor = backgroundColor;
+                        }
+
+                    }
+
+                    public Class<?> getColumnClass(int columnIndex) {
+                        if (columnIndex == 4) {
+                            return String.class;
+                        } else if (columnIndex == 5) {
+                            return Boolean.class;
+                        }
+                        return super.getColumnClass(columnIndex);
+                    }
+
+                    public Object getRow(int selectedRow) {
+                        if (selectedRow >= 0 && selectedRow < data.size()) {
+                            return data.get(selectedRow);
+                        }
+                        return null;
+                    }
+                }
+
+                private class ViewExamButtonListener implements ActionListener {
+                    int selectedRow = -1;
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        int selectedRow = table.getSelectedRow();
+                        if (selectedRow >= 0) {
+                            String examID = (String) tableModel.getValueAt(selectedRow, 0);
+                            String query = "SELECT * FROM Questions WHERE examID = \"" + examID + "\"";
+                            try {
+                                out.println(query);
+                                Object response = objectInput.readObject();
+
+                                if (response instanceof List<?> && !((List<?>) response).isEmpty()) {
+                                    JFrame popUpFrame = new JFrame();
+                                    JPanel panel = new JPanel();
+                                    ViewQuestionTableModel questionTableModel = new ViewQuestionTableModel(response);
+                                    JTable questionTable = new JTable(questionTableModel);
+                                    JScrollPane questionScrollPane = new JScrollPane(questionTable);
+                                    questionScrollPane.setBorder(BorderFactory.createLineBorder(Color.BLACK));
+                                    questionTable.setRowHeight(width / 32);
+
+                                    panel.setLayout(new BorderLayout());
+                                    popUpFrame.setLayout(new BorderLayout());
+                                    panel.add(questionScrollPane, BorderLayout.CENTER);
+                                    popUpFrame.add(panel, BorderLayout.CENTER);
+                                    popUpFrame.setSize(720, 405);
+                                    popUpFrame.setResizable(false);
+                                    popUpFrame.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
+                                    popUpFrame.setLocation(width / 4, height / 4);
+                                    popUpFrame.setVisible(true);
+                                }
+                            } catch (IOException | ClassNotFoundException ex) {
+                                ex.printStackTrace();
+                            }
+                        } else {
+                            JOptionPane.showMessageDialog(SwingUtilities.getWindowAncestor(examPanel),
+                                    "Choose an exam to view.", "Error", JOptionPane.ERROR_MESSAGE);
+                        }
+                    }
+                }
+                //TODO have to delete the questions too
+                private class RemoveExamButtonListener implements ActionListener {
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        int selectedRow = table.getSelectedRow();
+                        if (selectedRow >= 0) {
+                            int confirm = JOptionPane.showConfirmDialog(examPanel,
+                                    "Are you sure about removing the selected exam?",
+                                    "Confirm", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+                            if (confirm == JOptionPane.YES_OPTION) {
+                                String ID = (String) tableModel.getValueAt(selectedRow, 0);
+                                String delete = "DELETE FROM Exams WHERE examID = \"" + ID + "\"";
+                                try {
+                                    out.println(delete);
+                                    String response = in.readLine();
+                                    System.out.println("Server response: " + response);
+                                } catch (IOException ex) {
+                                    ex.printStackTrace();
+                                }
+                                tableModel.removeSelectedRow(selectedRow);
+                            }
+                        } else {
+                            JOptionPane.showMessageDialog(SwingUtilities.getWindowAncestor(examPanel),
+                                    "No row selected to remove.", "Error", JOptionPane.ERROR_MESSAGE);
+                        }
+                    }
+                }
+                private class ViewQuestionTableModel extends AbstractTableModel {
+                    private String[] columnNames = {"Question", "Answer", "Learning Outcomes"};
+                    private ArrayList<Object[]> data = new ArrayList<>();
+
+                    public ViewQuestionTableModel(Object response) {
+                        if (response instanceof List<?>) {
+                            List<?> responseList = (List<?>) response;
+                            for (Object question : responseList) {
+                                @SuppressWarnings("unchecked")
+                                Map<String, String> questionMap = (Map<String, String>) question;
+                                addRow(new Object[]{
+                                        questionMap.get("question"),
+                                        questionMap.get("answer"),
+                                        questionMap.get("LO")
+                                });
+                            }
+                        }
+                    }
+
+                    @Override
+                    public int getRowCount() {return data.size();}
+
+                    @Override
+                    public int getColumnCount() {return columnNames.length;}
+
+                    @Override
+                    public Object getValueAt(int rowIndex, int columnIndex) {
+                        Object[] rowData = data.get(rowIndex);
+                        return rowData[columnIndex];
+                    }
+                    @Override
+                    public String getColumnName(int column) {
+                        return columnNames[column];
+                    }
+                    public void addRow(Object[] rowData) {
+                        data.add(rowData);
+                        fireTableRowsInserted(data.size() - 1, data.size() - 1);
+                    }
                 }
             }
 
@@ -1458,9 +2040,9 @@ public class Frame extends JFrame {
             this.courseNamePanel = new CourseNamePanel(initialCourse);
             this.courseNamePanel.add(this.courseNamePanel.courseNameLabel);
             this.courseInfoPanel = new CourseInfoPanel();
-            this.courseNamePanel.setPreferredSize(new Dimension(width / 32 * 20, (height / 32)));
+            this.courseNamePanel.setPreferredSize(new Dimension(width / 32 * 20, (height / 36)));
             add(this.courseNamePanel, BorderLayout.NORTH);
-            this.courseInfoPanel.setPreferredSize(new Dimension(width / 32 * 20, (height / 32 * 15)));
+            this.courseInfoPanel.setPreferredSize(new Dimension(width / 32 * 20, (height / 32 * 18)));
             add(this.courseInfoPanel, BorderLayout.CENTER);
         }
         public void updatePanel(String newCourse) {

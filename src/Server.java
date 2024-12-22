@@ -73,7 +73,7 @@ public class Server {
                     )
                     """;
             String questions = """
-                    CREATE TABLE "Questions" (
+                    CREATE TABLE IF NOT EXISTS "Questions" (
                      	"coursecode"	TEXT,
                      	"question"	TEXT,
                      	"answer"	TEXT,
@@ -87,7 +87,7 @@ public class Server {
                      )
                     """;
             String exams = """
-                    CREATE TABLE "Exams" (
+                    CREATE TABLE IF NOT EXISTS "Exams" (
                     	"coursecode"	TEXT,
                     	"examtype"	TEXT,
                     	"examname"	TEXT,

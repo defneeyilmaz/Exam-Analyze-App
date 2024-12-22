@@ -858,7 +858,12 @@ public class Frame extends JFrame {
                             container.add(left);
                             container.add(right);
 
-                            addScoreButton.addActionListener(a -> {
+                            addScoreButton.addActionListener(new ActionListener() {
+                                @Override
+                                public void actionPerformed(ActionEvent e) {
+
+
+
                                 int selectedRowExam = table.getSelectedRow();
                                 JFrame popUpFrameScore;
                                 JTable tableQuestions;
@@ -866,7 +871,8 @@ public class Frame extends JFrame {
                                 TableModel examQuestionTableModel;
 
                                 if (selectedRowExam != -1) {
-                                    popUpFrameScore = new JFrame("Popup Frame Example");
+
+                                    popUpFrameScore = new JFrame("Student Grades");
                                     popUpFrameScore.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
                                     popUpFrameScore.setSize(400, 300);
 
@@ -875,6 +881,8 @@ public class Frame extends JFrame {
 
                                     examQuestionTableModel = new TableModel(new String[]{"Question ID", "Question", "Student's Score", "Possible Score"});
                                     tableQuestions = new JTable(examQuestionTableModel);
+                                    tableQuestions.getColumnModel().getColumn(2).setCellEditor(new DefaultCellEditor(new JTextField()));
+                                    tableQuestions.getColumnModel().getColumn(2).setCellRenderer(new DefaultTableCellRenderer());
                                     scrollPane = new JScrollPane(tableQuestions);
                                     panel.add(scrollPane, BorderLayout.CENTER);
 
@@ -905,7 +913,30 @@ public class Frame extends JFrame {
                                     okButton.addActionListener(new ActionListener() {
                                         @Override
                                         public void actionPerformed(ActionEvent e) {
-                                            JOptionPane.showMessageDialog(popUpFrame, "OK Button Clicked");
+                                            int flag =0;
+                                            for (Object[] temp: examQuestionTableModel.data){
+                                                if (temp[2].equals("")) flag++;
+                                            }
+                                            if(flag!=0){
+                                                JOptionPane.showMessageDialog(popUpFrameScore,
+                                                        "Scores cannot be empty.", "Error", JOptionPane.ERROR_MESSAGE);
+                                            }else{
+                                                for (Object[] temp: examQuestionTableModel.data){
+
+                                                    LinkedHashMap<String,String> insert = new LinkedHashMap<>();
+                                                    insert.put("studentID",(String)tableModel.getValueAt(selectedRow,0));
+                                                    insert.put("questionID",(String)temp[0]);
+                                                    insert.put("point",(String)temp[2]);
+                                                    try {
+                                                        out.println(insertInto("Grades",insert));
+                                                        String response_ = in.readLine();
+                                                        System.out.println(response_);
+                                                    } catch (IOException ex) {
+                                                        ex.printStackTrace();
+                                                    }
+                                                }
+                                                popUpFrameScore.dispose();
+                                            }
                                         }
                                     });
 
@@ -929,7 +960,7 @@ public class Frame extends JFrame {
                                     JOptionPane.showMessageDialog(popUpFrame,
                                             "No row selected.", "Error", JOptionPane.ERROR_MESSAGE);
                                 }
-
+                                }
                             });
 
                             popUpFrame.add(container, BorderLayout.CENTER);
@@ -991,7 +1022,23 @@ public class Frame extends JFrame {
                         public String getColumnName(int col) {
                             return columnNames[col];
                         }
-
+                        public void setValueAt(Object value, int row, int col) {
+                            if (col == 2) {
+                                try {
+                                    int pointValue = Integer.parseInt((String) value);
+                                    if (pointValue < 0 || pointValue > Integer.parseInt((String)data.get(row)[3])) {
+                                        throw new NumberFormatException("Points must be between 0 and 100.");
+                                    }
+                                    data.get(row)[col] = value;
+                                    fireTableCellUpdated(row, col);
+                                } catch (NumberFormatException e) {
+                                    JOptionPane.showMessageDialog(null, "Invalid point value. Please enter a valid integer between 0 and 100.", "Error", JOptionPane.ERROR_MESSAGE);
+                                }
+                            }
+                        }
+                        public boolean isCellEditable(int row, int col) {
+                            return col == 2;
+                        }
                         public void addRow(Object[] rowData) {
                             data.add(rowData);
                             fireTableRowsInserted(data.size() - 1, data.size() - 1);
@@ -1963,7 +2010,7 @@ public class Frame extends JFrame {
                             if (response instanceof List<?> && !((List<?>) response).isEmpty()) {
                                 List<?> responseList = (List<?>) response;
                                 for (Object exam : responseList) {
-                                    @SuppressWarnings("unchecked")
+                                     @SuppressWarnings("unchecked")
                                     Map<String, String> examMap = (Map<String, String>) exam;
                                     addRow(new Object[]{examMap.get("examID"), examMap.get("examname"), examMap.get("examtype"), examMap.get("los")});
                                 }
@@ -2333,9 +2380,7 @@ public class Frame extends JFrame {
     }
 
     private String createID() {
-        LocalDateTime myObj = LocalDateTime.now();
-        String id = myObj.toString().replace("-", "").replace("T", "").replace(":", "");
-        return id.substring(0, 14);
+        return LocalDateTime.now().toString().replace("-", "").replace("T", "").replace(":", "").replace(".","");
     }
 }
 

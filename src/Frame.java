@@ -442,8 +442,24 @@ public class Frame extends JFrame {
                 add(courseNameLabel);
             }
 
-            public void updateCourseName(String courseName) {
-                this.courseNameLabel.setText("Course Name: " + courseName);
+            public void updateCourseName(String courseCode) {
+                String getCourseName = "SELECT coursename FROM CourseInfo WHERE coursecode = \"" + courseCode + "\"";
+                try {
+                    out.println(getCourseName);
+                    Object response = objectInput.readObject();
+                    if (response instanceof List<?> && !((List<?>) response).isEmpty()) {
+                        List<?> responseList = (List<?>) response;
+
+                        if (responseList.getFirst() instanceof Map<?, ?>) {
+                            @SuppressWarnings("unchecked")
+                            Map<String, String> rowData = (Map<String, String>) responseList.getFirst();
+                            String courseName = rowData.get("coursename");
+                            this.courseNameLabel.setText(courseName + " " + courseCode);
+                        }
+                    }
+                } catch (IOException | ClassNotFoundException ex) {
+                    ex.printStackTrace();
+                }
             }
         }
 
@@ -528,6 +544,7 @@ public class Frame extends JFrame {
 
                         this.table.setRowHeight(height / 64 * 2);
                         this.table.setAutoCreateRowSorter(true);
+                        this.table.getTableHeader().setReorderingAllowed(false);
 
                         this.scrollPane = new JScrollPane(table);
                         this.scrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
@@ -980,6 +997,7 @@ public class Frame extends JFrame {
 
                     table.setRowHeight(height / 16);
                     table.setAutoCreateRowSorter(false);
+                    table.getTableHeader().setReorderingAllowed(false);
 
                     TableColumnModel columnModel = table.getColumnModel();
                     columnModel.getColumn(0).setPreferredWidth(width / 64 * 4);
@@ -1099,6 +1117,7 @@ public class Frame extends JFrame {
                     columnModel.getColumn(2).setPreferredWidth(tableWidth / 28 * 6);
                     table.setRowHeight(height / 64 * 4);
                     table.setAutoCreateRowSorter(true);
+                    table.getTableHeader().setReorderingAllowed(false);
 
                     scrollPane = new JScrollPane(table);
 
@@ -1450,6 +1469,7 @@ public class Frame extends JFrame {
                     columnModel.getColumn(3).setPreferredWidth(tableWidth / 28 * 6);
                     this.table.setRowHeight(tableWidth / 64 * 4);
                     this.table.setAutoCreateRowSorter(true);
+                    this.table.getTableHeader().setReorderingAllowed(false);
 
                     setPreferredSize(new Dimension(width / 32 * 14, height / 32 * 8));
                     setLayout(new BorderLayout());
@@ -1502,6 +1522,7 @@ public class Frame extends JFrame {
                         JScrollPane questionScrollPane = new JScrollPane(questionTable);
                         questionScrollPane.setBorder(BorderFactory.createLineBorder(Color.BLACK, 1));
                         questionTable.setRowHeight(width / 32);
+                        questionTable.getTableHeader().setReorderingAllowed(false);
 
                         mainPanel.setLayout(new BorderLayout());
                         mainPanel.add(questionScrollPane, BorderLayout.CENTER);
@@ -2050,9 +2071,6 @@ public class Frame extends JFrame {
             add(this.courseNamePanel, BorderLayout.NORTH);
             this.courseInfoPanel.setPreferredSize(new Dimension(width / 32 * 20, (height / 32 * 18)));
             add(this.courseInfoPanel, BorderLayout.CENTER);
-        }
-        public void updatePanel(String newCourse) {
-            this.courseNamePanel.updateCourseName(newCourse);
         }
     }
 

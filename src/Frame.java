@@ -11,7 +11,6 @@ import java.net.*;
 import java.util.*;
 import java.util.List;
 import javax.swing.Timer;
-import javax.swing.border.TitledBorder;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.filechooser.FileFilter;

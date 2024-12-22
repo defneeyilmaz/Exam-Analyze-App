@@ -862,8 +862,6 @@ public class Frame extends JFrame {
                                 @Override
                                 public void actionPerformed(ActionEvent e) {
 
-
-
                                 int selectedRowExam = table.getSelectedRow();
                                 JFrame popUpFrameScore;
                                 JTable tableQuestions;
@@ -886,10 +884,10 @@ public class Frame extends JFrame {
                                     scrollPane = new JScrollPane(tableQuestions);
                                     panel.add(scrollPane, BorderLayout.CENTER);
 
-                                    String setCourses = "SELECT questionID , question, possiblepoint FROM Questions WHERE examID = \"" +
+                                    String query = "SELECT questionID , question, possiblepoint FROM Questions WHERE examID = \"" +
                                             examTableModel.getValueAt(selectedIndex,0)+ "\" ";
                                     try {
-                                        out.println(setCourses);
+                                        out.println(query);
                                         Object response = objectInput.readObject();
 
                                         if (response instanceof List<?> && !((List<?>) response).isEmpty()) {
@@ -904,6 +902,30 @@ public class Frame extends JFrame {
                                     } catch (IOException | ClassNotFoundException ex) {
                                         ex.printStackTrace();
                                     }
+
+                                    for (Object[] temp: examQuestionTableModel.data){
+                                        String query1 = "SELECT point FROM Grades WHERE studentID = \"" +
+                                                tableModel.getValueAt(selectedRow,0)+"\" AND questionID = \""+temp[0]+"\"";
+                                        try {
+                                            out.println(query1);
+                                            Object response = objectInput.readObject();
+
+                                            if (response instanceof List<?> && !((List<?>) response).isEmpty()) {
+                                                List<?> responseList = (List<?>) response;
+
+                                                for (Object point : responseList) {
+                                                    @SuppressWarnings("unchecked")
+                                                    Map<String, String> pointMap = (Map<String, String>) point;
+                                                    temp[2]=pointMap.get("point");
+                                                }
+                                            }
+                                        } catch (IOException | ClassNotFoundException ex) {
+                                            ex.printStackTrace();
+                                        }
+
+                                    }
+
+
 
                                     JPanel buttonPanel = new JPanel();
                                     buttonPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
@@ -922,13 +944,12 @@ public class Frame extends JFrame {
                                                         "Scores cannot be empty.", "Error", JOptionPane.ERROR_MESSAGE);
                                             }else{
                                                 for (Object[] temp: examQuestionTableModel.data){
-
-                                                    LinkedHashMap<String,String> insert = new LinkedHashMap<>();
-                                                    insert.put("studentID",(String)tableModel.getValueAt(selectedRow,0));
-                                                    insert.put("questionID",(String)temp[0]);
-                                                    insert.put("point",(String)temp[2]);
+                                                    //LinkedHashMap<String,String> insert = new LinkedHashMap<>();
+                                                    //insert.put("studentID",(String)tableModel.getValueAt(selectedRow,0));
+                                                    //insert.put("questionID",(String)temp[0]);
+                                                    //insert.put("point",(String)temp[2]);
                                                     try {
-                                                        out.println(insertInto("Grades",insert));
+                                                        out.println("UPDATE Grades SET point = \""+temp[2]+"\" WHERE studentID = \""+tableModel.getValueAt(selectedRow,0)+"\" AND questionID = \""+temp[0]+"\"");
                                                         String response_ = in.readLine();
                                                         System.out.println(response_);
                                                     } catch (IOException ex) {
@@ -1021,6 +1042,11 @@ public class Frame extends JFrame {
 
                         public String getColumnName(int col) {
                             return columnNames[col];
+                        }
+
+                        public void setValueAt(int row,int col, String value){
+                            data.get(row)[col] = value;
+                            fireTableCellUpdated(row, col);
                         }
                         public void setValueAt(Object value, int row, int col) {
                             if (col == 2) {

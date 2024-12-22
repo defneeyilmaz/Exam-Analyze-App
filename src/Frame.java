@@ -738,20 +738,20 @@ public class Frame extends JFrame {
                         //TODO: Sectionı kontrol et
                         addStudentButton.addActionListener(u -> {
                             String schoolID;
-                                schoolID = idField.getText().matches("^[1-9]\\d{10}$") ? idField.getText() : "";
-                                if (schoolID.isEmpty() ) {
-                                    JOptionPane.showMessageDialog(popUpFrame, "Correctly input the ID");
-                                    idField.setText("");
-                                }else {
-                                    String nameSurname = nameField.getText();
-                                    String section = sectionField.getText();
-                                    HashMap<String, ArrayList<Object[]>> temp = new HashMap<>();
-                                    ArrayList<Object[]> a = new ArrayList<>();
-                                    a.add(new Object[]{schoolID, nameSurname, section});
-                                    temp.put(section, a);
-                                    addNewStudent(temp);
-                                    popUpFrame.dispose();
-                                }
+                            schoolID = idField.getText().matches("^[1-9]\\d{10}$") ? idField.getText() : "";
+                            if (schoolID.isEmpty()) {
+                                JOptionPane.showMessageDialog(popUpFrame, "Correctly input the ID");
+                                idField.setText("");
+                            } else {
+                                String nameSurname = nameField.getText();
+                                String section = sectionField.getText();
+                                HashMap<String, ArrayList<Object[]>> temp = new HashMap<>();
+                                ArrayList<Object[]> a = new ArrayList<>();
+                                a.add(new Object[]{schoolID, nameSurname, section});
+                                temp.put(section, a);
+                                addNewStudent(temp);
+                                popUpFrame.dispose();
+                            }
                         });
                         cancelButton.addActionListener(a -> {
                             popUpFrame.dispose();
@@ -841,15 +841,83 @@ public class Frame extends JFrame {
 
                             JPanel LO = new JPanel(new GridLayout(0, 2, 3, 3));
                             LO.setBorder(BorderFactory.createTitledBorder("Learning Outcomes"));
-                            ArrayList<JTextField> textFields = new ArrayList<>();
+
+
+
+
+                            ArrayList<Integer> studentPoints = new ArrayList<>();
+                            ArrayList<Integer> possiblePoints = new ArrayList<>();
+
+                            for (int i = 1; i <= loPanel.tablePanel.tableModel.getRowCount(); i++) {
+
+                                studentPoints.add(0);
+                                possiblePoints.add(0);
+                            }
+
+
+
+                            String query = "SELECT questionID, possiblepoint, LO FROM Questions WHERE examID IS NOT NULL AND coursecode = \"" +leftPanel.courseListPanel.list.getSelectedValue()+ "\" ";
+
+                            try {
+                                out.println(query);
+                                Object response = objectInput.readObject();
+
+                                if (response instanceof List<?> && !((List<?>) response).isEmpty()) {
+                                    List<?> responseList = (List<?>) response;
+
+                                    for (Object question : responseList) {
+                                        @SuppressWarnings("unchecked")
+                                        Map<String, String> questionMap = (Map<String, String>) question;
+                                        String possiblePoint = questionMap.get("possiblepoint");
+                                        String questionID = questionMap.get("questionID");
+                                        String[] LOs = questionMap.get("LO").split(",");
+
+                                        String query1 = "SELECT point FROM Grades WHERE questionID = \""+questionID+"\" AND studentID = \""+studentID+"\"";
+                                        try {
+                                            out.println(query1);
+                                            Object response1 = objectInput.readObject();
+
+                                            if (response instanceof List<?> && !((List<?>) response1).isEmpty()) {
+                                                List<?> responseList1 = (List<?>) response1;
+                                                for (Object point : responseList1) {
+                                                    @SuppressWarnings("unchecked")
+                                                    Map<String, String> pointMap = (Map<String, String>) point;
+                                                    for (String tempLO : LOs){
+
+                                                        studentPoints.set(Integer.parseInt(tempLO.substring(2))-1,studentPoints.get(Integer.parseInt(tempLO.substring(2))-1)+Integer.parseInt(pointMap.get("point")));
+                                                        possiblePoints.set(Integer.parseInt(tempLO.substring(2))-1,possiblePoints.get(Integer.parseInt(tempLO.substring(2))-1)+Integer.parseInt(possiblePoint));
+                                                    }
+                                                }
+                                            }
+                                        } catch (IOException | ClassNotFoundException ex) {
+                                            ex.printStackTrace();
+                                        }
+                                    }
+                                }
+                            } catch (IOException | ClassNotFoundException ex) {
+                                ex.printStackTrace();
+                            }
+
+                            //ArrayList<JTextField> textFields = new ArrayList<>();
+
                             for (int i = 1; i <= loPanel.tablePanel.tableModel.getRowCount(); i++) {
                                 LO.add(new JLabel("LO" + i + ":"));
                                 JTextField textField = new JTextField();
                                 textField.setEnabled(false);
-                                textField.setText("");
-                                textFields.add(textField);
+
+                                int studentPoint= studentPoints.get(i-1);
+                                int possiblePoint = possiblePoints.get(i-1);
+
+                                if(possiblePoint!=0){
+                                    double percent = (double)studentPoint / (double)possiblePoint;
+                                    textField.setText(Double.toString(percent));
+                                }else {
+                                    textField.setText("%0");
+                                }
+
                                 LO.add(textField);
                             }
+
 
                             right.add(info);
 
@@ -862,125 +930,120 @@ public class Frame extends JFrame {
                                 @Override
                                 public void actionPerformed(ActionEvent e) {
 
-                                int selectedRowExam = table.getSelectedRow();
-                                JFrame popUpFrameScore;
-                                JTable tableQuestions;
-                                JScrollPane scrollPane;
-                                TableModel examQuestionTableModel;
+                                    int selectedRowExam = table.getSelectedRow();
+                                    JFrame popUpFrameScore;
+                                    JTable tableQuestions;
+                                    JScrollPane scrollPane;
+                                    TableModel examQuestionTableModel;
 
-                                if (selectedRowExam != -1) {
+                                    if (selectedRowExam != -1) {
 
-                                    popUpFrameScore = new JFrame("Student Grades");
-                                    popUpFrameScore.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
-                                    popUpFrameScore.setSize(400, 300);
+                                        popUpFrameScore = new JFrame("Student Grades");
+                                        popUpFrameScore.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+                                        popUpFrameScore.setSize(400, 300);
 
-                                    JPanel panel = new JPanel();
-                                    panel.setLayout(new BorderLayout());
+                                        JPanel panel = new JPanel();
+                                        panel.setLayout(new BorderLayout());
 
-                                    examQuestionTableModel = new TableModel(new String[]{"Question ID", "Question", "Student's Score", "Possible Score"});
-                                    tableQuestions = new JTable(examQuestionTableModel);
-                                    tableQuestions.getColumnModel().getColumn(2).setCellEditor(new DefaultCellEditor(new JTextField()));
-                                    tableQuestions.getColumnModel().getColumn(2).setCellRenderer(new DefaultTableCellRenderer());
-                                    scrollPane = new JScrollPane(tableQuestions);
-                                    panel.add(scrollPane, BorderLayout.CENTER);
+                                        examQuestionTableModel = new TableModel(new String[]{"Question ID", "Question", "Student's Score", "Possible Score"});
+                                        tableQuestions = new JTable(examQuestionTableModel);
+                                        tableQuestions.getColumnModel().getColumn(2).setCellEditor(new DefaultCellEditor(new JTextField()));
+                                        tableQuestions.getColumnModel().getColumn(2).setCellRenderer(new DefaultTableCellRenderer());
+                                        scrollPane = new JScrollPane(tableQuestions);
+                                        panel.add(scrollPane, BorderLayout.CENTER);
 
-                                    String query = "SELECT questionID , question, possiblepoint FROM Questions WHERE examID = \"" +
-                                            examTableModel.getValueAt(selectedIndex,0)+ "\" ";
-                                    try {
-                                        out.println(query);
-                                        Object response = objectInput.readObject();
-
-                                        if (response instanceof List<?> && !((List<?>) response).isEmpty()) {
-                                            List<?> responseList = (List<?>) response;
-
-                                            for (Object exam : responseList) {
-                                                @SuppressWarnings("unchecked")
-                                                Map<String, String> questionMap = (Map<String, String>) exam;
-                                                examQuestionTableModel.addRow(new Object[]{questionMap.get("questionID"), questionMap.get("question"),"" ,questionMap.get("possiblepoint")});
-                                            }
-                                        }
-                                    } catch (IOException | ClassNotFoundException ex) {
-                                        ex.printStackTrace();
-                                    }
-
-                                    for (Object[] temp: examQuestionTableModel.data){
-                                        String query1 = "SELECT point FROM Grades WHERE studentID = \"" +
-                                                tableModel.getValueAt(selectedRow,0)+"\" AND questionID = \""+temp[0]+"\"";
+                                        String query = "SELECT questionID , question, possiblepoint FROM Questions WHERE examID = \"" +
+                                                examTableModel.getValueAt(selectedIndex, 0) + "\" ";
                                         try {
-                                            out.println(query1);
+                                            out.println(query);
                                             Object response = objectInput.readObject();
 
                                             if (response instanceof List<?> && !((List<?>) response).isEmpty()) {
                                                 List<?> responseList = (List<?>) response;
 
-                                                for (Object point : responseList) {
+                                                for (Object exam : responseList) {
                                                     @SuppressWarnings("unchecked")
-                                                    Map<String, String> pointMap = (Map<String, String>) point;
-                                                    temp[2]=pointMap.get("point");
+                                                    Map<String, String> questionMap = (Map<String, String>) exam;
+                                                    examQuestionTableModel.addRow(new Object[]{questionMap.get("questionID"), questionMap.get("question"), "", questionMap.get("possiblepoint")});
                                                 }
                                             }
                                         } catch (IOException | ClassNotFoundException ex) {
                                             ex.printStackTrace();
                                         }
 
-                                    }
+                                        for (Object[] temp : examQuestionTableModel.data) {
+                                            String query1 = "SELECT point FROM Grades WHERE studentID = \"" +
+                                                    tableModel.getValueAt(selectedRow, 0) + "\" AND questionID = \"" + temp[0] + "\"";
+                                            try {
+                                                out.println(query1);
+                                                Object response = objectInput.readObject();
 
+                                                if (response instanceof List<?> && !((List<?>) response).isEmpty()) {
+                                                    List<?> responseList = (List<?>) response;
 
-
-                                    JPanel buttonPanel = new JPanel();
-                                    buttonPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
-
-
-                                    JButton okButton = new JButton("OK");
-                                    okButton.addActionListener(new ActionListener() {
-                                        @Override
-                                        public void actionPerformed(ActionEvent e) {
-                                            int flag =0;
-                                            for (Object[] temp: examQuestionTableModel.data){
-                                                if (temp[2].equals("")) flag++;
-                                            }
-                                            if(flag!=0){
-                                                JOptionPane.showMessageDialog(popUpFrameScore,
-                                                        "Scores cannot be empty.", "Error", JOptionPane.ERROR_MESSAGE);
-                                            }else{
-                                                for (Object[] temp: examQuestionTableModel.data){
-                                                    //LinkedHashMap<String,String> insert = new LinkedHashMap<>();
-                                                    //insert.put("studentID",(String)tableModel.getValueAt(selectedRow,0));
-                                                    //insert.put("questionID",(String)temp[0]);
-                                                    //insert.put("point",(String)temp[2]);
-                                                    try {
-                                                        out.println("UPDATE Grades SET point = \""+temp[2]+"\" WHERE studentID = \""+tableModel.getValueAt(selectedRow,0)+"\" AND questionID = \""+temp[0]+"\"");
-                                                        String response_ = in.readLine();
-                                                        System.out.println(response_);
-                                                    } catch (IOException ex) {
-                                                        ex.printStackTrace();
+                                                    for (Object point : responseList) {
+                                                        @SuppressWarnings("unchecked")
+                                                        Map<String, String> pointMap = (Map<String, String>) point;
+                                                        temp[2] = pointMap.get("point");
                                                     }
                                                 }
+                                            } catch (IOException | ClassNotFoundException ex) {
+                                                ex.printStackTrace();
+                                            }
+
+                                        }
+
+
+                                        JPanel buttonPanel = new JPanel();
+                                        buttonPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
+
+
+                                        JButton okButton = new JButton("OK");
+                                        okButton.addActionListener(new ActionListener() {
+                                            @Override
+                                            public void actionPerformed(ActionEvent e) {
+                                                int flag = 0;
+                                                for (Object[] temp : examQuestionTableModel.data) {
+                                                    if (temp[2].equals("")) flag++;
+                                                }
+                                                if (flag != 0) {
+                                                    JOptionPane.showMessageDialog(popUpFrameScore,
+                                                            "Scores cannot be empty.", "Error", JOptionPane.ERROR_MESSAGE);
+                                                } else {
+                                                    for (Object[] temp : examQuestionTableModel.data) {
+                                                        try {
+                                                            out.println("UPDATE Grades SET point = \"" + temp[2] + "\" WHERE studentID = \"" + tableModel.getValueAt(selectedRow, 0) + "\" AND questionID = \"" + temp[0] + "\"");
+                                                            String response_ = in.readLine();
+                                                            System.out.println(response_);
+                                                        } catch (IOException ex) {
+                                                            ex.printStackTrace();
+                                                        }
+                                                    }
+                                                    popUpFrameScore.dispose();
+                                                }
+                                            }
+                                        });
+
+
+                                        JButton cancelButton = new JButton("Cancel");
+                                        cancelButton.addActionListener(new ActionListener() {
+                                            @Override
+                                            public void actionPerformed(ActionEvent e) {
                                                 popUpFrameScore.dispose();
                                             }
-                                        }
-                                    });
+                                        });
 
+                                        buttonPanel.add(okButton);
+                                        buttonPanel.add(cancelButton);
 
-                                    JButton cancelButton = new JButton("Cancel");
-                                    cancelButton.addActionListener(new ActionListener() {
-                                        @Override
-                                        public void actionPerformed(ActionEvent e) {
-                                            popUpFrameScore.dispose();
-                                        }
-                                    });
-
-                                    buttonPanel.add(okButton);
-                                    buttonPanel.add(cancelButton);
-
-                                    panel.add(buttonPanel, BorderLayout.SOUTH);
-                                    popUpFrameScore.add(panel);
-                                    popUpFrameScore.setLocationRelativeTo(null);
-                                    popUpFrameScore.setVisible(true);
-                                } else {
-                                    JOptionPane.showMessageDialog(popUpFrame,
-                                            "No row selected.", "Error", JOptionPane.ERROR_MESSAGE);
-                                }
+                                        panel.add(buttonPanel, BorderLayout.SOUTH);
+                                        popUpFrameScore.add(panel);
+                                        popUpFrameScore.setLocationRelativeTo(null);
+                                        popUpFrameScore.setVisible(true);
+                                    } else {
+                                        JOptionPane.showMessageDialog(popUpFrame,
+                                                "No row selected.", "Error", JOptionPane.ERROR_MESSAGE);
+                                    }
                                 }
                             });
 
@@ -1044,15 +1107,16 @@ public class Frame extends JFrame {
                             return columnNames[col];
                         }
 
-                        public void setValueAt(int row,int col, String value){
+                        public void setValueAt(int row, int col, String value) {
                             data.get(row)[col] = value;
                             fireTableCellUpdated(row, col);
                         }
+
                         public void setValueAt(Object value, int row, int col) {
                             if (col == 2) {
                                 try {
                                     int pointValue = Integer.parseInt((String) value);
-                                    if (pointValue < 0 || pointValue > Integer.parseInt((String)data.get(row)[3])) {
+                                    if (pointValue < 0 || pointValue > Integer.parseInt((String) data.get(row)[3])) {
                                         throw new NumberFormatException("Points must be between 0 and 100.");
                                     }
                                     data.get(row)[col] = value;
@@ -1062,9 +1126,11 @@ public class Frame extends JFrame {
                                 }
                             }
                         }
+
                         public boolean isCellEditable(int row, int col) {
                             return col == 2;
                         }
+
                         public void addRow(Object[] rowData) {
                             data.add(rowData);
                             fireTableRowsInserted(data.size() - 1, data.size() - 1);
@@ -2021,7 +2087,7 @@ public class Frame extends JFrame {
                             try {
                                 out.println(setGrades);
                                 String response = in.readLine();
-                            }   catch (IOException e) {
+                            } catch (IOException e) {
                                 e.printStackTrace();
                             }
                         }
@@ -2069,7 +2135,7 @@ public class Frame extends JFrame {
                             if (response instanceof List<?> && !((List<?>) response).isEmpty()) {
                                 List<?> responseList = (List<?>) response;
                                 for (Object exam : responseList) {
-                                     @SuppressWarnings("unchecked")
+                                    @SuppressWarnings("unchecked")
                                     Map<String, String> examMap = (Map<String, String>) exam;
                                     addRow(new Object[]{examMap.get("examID"), examMap.get("examname"), examMap.get("examtype"), examMap.get("los")});
                                 }
@@ -2439,7 +2505,7 @@ public class Frame extends JFrame {
     }
 
     private String createID() {
-        return LocalDateTime.now().toString().replace("-", "").replace("T", "").replace(":", "").replace(".","");
+        return LocalDateTime.now().toString().replace("-", "").replace("T", "").replace(":", "").replace(".", "");
     }
 }
 

@@ -223,6 +223,7 @@ public class Frame extends JFrame {
                 add(inputPanel);
                 add(Box.createVerticalStrut(20));
                 add(this.signupButton);
+                add(Box.createVerticalStrut(10));
                 add(this.cancelButton);
                 add(Box.createVerticalStrut(10));
                 add(Box.createVerticalGlue());
@@ -872,6 +873,7 @@ public class Frame extends JFrame {
                                         String questionID = questionMap.get("questionID");
                                         String[] LOs = questionMap.get("LO").split(",");
 
+
                                         String query1 = "SELECT point FROM Grades WHERE questionID = \""+questionID+"\" AND studentID = \""+studentID+"\"";
                                         try {
                                             out.println(query1);
@@ -881,10 +883,11 @@ public class Frame extends JFrame {
                                                 List<?> responseList1 = (List<?>) response1;
                                                 for (Object point : responseList1) {
                                                     @SuppressWarnings("unchecked")
-                                                    Map<String, String> pointMap = (Map<String, String>) point;
+                                                    Map<String, Integer> pointMap = (Map<String, Integer>) point;
+
                                                     for (String tempLO : LOs){
 
-                                                        studentPoints.set(Integer.parseInt(tempLO.substring(2))-1,studentPoints.get(Integer.parseInt(tempLO.substring(2))-1)+Integer.parseInt(pointMap.get("point")));
+                                                        studentPoints.set(Integer.parseInt(tempLO.substring(2))-1,studentPoints.get(Integer.parseInt(tempLO.substring(2))-1)+pointMap.get("point"));
                                                         possiblePoints.set(Integer.parseInt(tempLO.substring(2))-1,possiblePoints.get(Integer.parseInt(tempLO.substring(2))-1)+Integer.parseInt(possiblePoint));
                                                     }
                                                 }
@@ -910,9 +913,9 @@ public class Frame extends JFrame {
 
                                 if(possiblePoint!=0){
                                     double percent = (double)studentPoint / (double)possiblePoint;
-                                    textField.setText(Double.toString(percent));
+                                    textField.setText("%"+percent*100);
                                 }else {
-                                    textField.setText("%0");
+                                    textField.setText("%0.0");
                                 }
 
                                 LO.add(textField);
@@ -1019,6 +1022,7 @@ public class Frame extends JFrame {
                                                             ex.printStackTrace();
                                                         }
                                                     }
+
                                                     popUpFrameScore.dispose();
                                                 }
                                             }

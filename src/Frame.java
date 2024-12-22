@@ -1071,7 +1071,8 @@ public class Frame extends JFrame {
                     tableModel = new QuestionTableModel();
                     table = new JTable(tableModel);
 
-                    String setCourses = "SELECT questionID ,question ,answer ,LO  FROM Questions WHERE coursecode = \""+leftPanel.courseListPanel.list.getSelectedValue()+"\"";
+                    String setCourses = "SELECT questionID ,question ,answer ,LO  FROM Questions WHERE coursecode = \"" +
+                            leftPanel.courseListPanel.list.getSelectedValue() + "\" " + "AND possiblepoint = \"0\";";
                     try {
                         out.println(setCourses);
                         Object response = objectInput.readObject();
@@ -1730,7 +1731,7 @@ public class Frame extends JFrame {
                         addQuestion.put("answer", question[2].toString());
                         addQuestion.put("possiblepoint", question[4].toString());
                         addQuestion.put("LO", question[3].toString());
-                        addQuestion.put("questionID", (question[0]+ID));
+                        addQuestion.put("questionID", createID());
                         addQuestion.put("examID", ID);
                         String newQuestion = insertInto("Questions", addQuestion);
                         System.out.println(newQuestion);
@@ -1963,9 +1964,13 @@ public class Frame extends JFrame {
                             if (confirm == JOptionPane.YES_OPTION) {
                                 String ID = (String) tableModel.getValueAt(selectedRow, 0);
                                 String delete = "DELETE FROM Exams WHERE examID = \"" + ID + "\"";
+                                String questionDelete = "DELETE FROM Questions WHERE examID = \"" + ID + "\"";
                                 try {
                                     out.println(delete);
                                     String response = in.readLine();
+                                    System.out.println("Server response: " + response);
+                                    out.println(questionDelete);
+                                    response = in.readLine();
                                     System.out.println("Server response: " + response);
                                 } catch (IOException ex) {
                                     ex.printStackTrace();
@@ -1979,7 +1984,7 @@ public class Frame extends JFrame {
                     }
                 }
                 private class ViewQuestionTableModel extends AbstractTableModel {
-                    private String[] columnNames = {"Question", "Answer", "Learning Outcomes"};
+                    private String[] columnNames = {"Question", "Answer", "Point ","Learning Outcomes"};
                     private ArrayList<Object[]> data = new ArrayList<>();
 
                     public ViewQuestionTableModel(Object response) {
@@ -1991,6 +1996,7 @@ public class Frame extends JFrame {
                                 addRow(new Object[]{
                                         questionMap.get("question"),
                                         questionMap.get("answer"),
+                                        questionMap.get("possiblepoint"),
                                         questionMap.get("LO")
                                 });
                             }

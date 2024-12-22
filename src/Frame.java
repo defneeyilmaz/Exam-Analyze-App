@@ -1,3 +1,5 @@
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import javax.swing.*;
 import java.awt.*;
@@ -641,7 +643,10 @@ public class Frame extends JFrame {
 
                     addButton = new JButton("Add");
                     removeButton = new JButton("Delete");
+                    removeButton.setEnabled(false);
                     seeButton = new JButton("See");
+                    seeButton.setEnabled(false);
+
                     addAllStudentsButton = new JButton("Add from csv file");
 
                     buttonPanel.add(addButton);
@@ -651,6 +656,10 @@ public class Frame extends JFrame {
                     buttonPanel.setPreferredSize(new Dimension(width / 32 * 6, height / 32 * 2));
 
                     populateTable();
+                    if(tabbedPane.getTabCount()!=0){
+                        seeButton.setEnabled(true);
+                        removeButton.setEnabled(true);
+                    }
 
                     addAllStudentsButton.addActionListener(e -> {
 
@@ -696,7 +705,8 @@ public class Frame extends JFrame {
                                 JOptionPane.showMessageDialog(popUpFrame, "Selected File: " + selectedFile.getAbsolutePath());
 
                                 addNewStudent(readStudentsFromCSV(selectedFile.getAbsolutePath()));
-
+                                seeButton.setEnabled(true);
+                                removeButton.setEnabled(true);
                                 popUpFrame.dispose();
                             } else {
                                 JOptionPane.showMessageDialog(popUpFrame, "No file selected.");
@@ -736,21 +746,24 @@ public class Frame extends JFrame {
                         popUpFrame.add(sectionField);
                         popUpFrame.add(addStudentButton);
                         popUpFrame.add(cancelButton);
-                        //TODO: Sectionı kontrol et
+
                         addStudentButton.addActionListener(u -> {
                             String schoolID;
                             schoolID = idField.getText().matches("^[1-9]\\d{10}$") ? idField.getText() : "";
-                            if (schoolID.isEmpty()) {
-                                JOptionPane.showMessageDialog(popUpFrame, "Correctly input the ID");
+                            String section = sectionField.getText().matches("^[1-9]$") ? sectionField.getText() : "";
+                            if (schoolID.isEmpty() || section.isEmpty()) {
+                                JOptionPane.showMessageDialog(popUpFrame, "Correctly input fields");
                                 idField.setText("");
+                                sectionField.setText("");
                             } else {
                                 String nameSurname = nameField.getText();
-                                String section = sectionField.getText();
                                 HashMap<String, ArrayList<Object[]>> temp = new HashMap<>();
                                 ArrayList<Object[]> a = new ArrayList<>();
                                 a.add(new Object[]{schoolID, nameSurname, section});
                                 temp.put(section, a);
                                 addNewStudent(temp);
+                                seeButton.setEnabled(true);
+                                removeButton.setEnabled(true);
                                 popUpFrame.dispose();
                             }
                         });
@@ -956,7 +969,7 @@ public class Frame extends JFrame {
                                         panel.add(scrollPane, BorderLayout.CENTER);
 
                                         String query = "SELECT questionID , question, possiblepoint FROM Questions WHERE examID = \"" +
-                                                examTableModel.getValueAt(selectedIndex, 0) + "\" ";
+                                                examTableModel.getValueAt(selectedRowExam, 0) + "\" ";
                                         try {
                                             out.println(query);
                                             Object response = objectInput.readObject();
@@ -1604,7 +1617,7 @@ public class Frame extends JFrame {
                         LOPanel.add(LOLabel);
                         LOPanel.add(checkBoxPanel);
                         checkBoxPanel.setLayout(new GridLayout(0, 1));
-                        //TODO derse göre oluştur
+
                         addCheckBox();
 
 
@@ -2293,6 +2306,33 @@ public class Frame extends JFrame {
                                     popUpFrame.setLayout(new BorderLayout());
                                     panel.add(questionScrollPane, BorderLayout.CENTER);
                                     popUpFrame.add(panel, BorderLayout.CENTER);
+
+
+                                    JButton closeButton = new JButton("Write to a txt file");
+                                    closeButton.addActionListener(a -> {
+
+                                        String desktopPath = System.getProperty("user.home") + "/Desktop";
+                                        String fileName = examID +".txt";
+
+                                        Path filePath = Paths.get(desktopPath, fileName);
+
+                                        try (FileWriter writer = new FileWriter(filePath.toFile())) {
+                                            int counter = 1;
+                                            for (Object[] temp : questionTableModel.data) {
+                                                writer.write(counter+") "+temp[0]+"\n\n\n");
+                                                counter++;
+                                            }
+                                            popUpFrame.dispose();
+                                        } catch (IOException ex) {
+                                            ex.printStackTrace();
+                                        }
+
+
+                                    });
+                                    JPanel buttonPanel = new JPanel();
+                                    buttonPanel.add(closeButton);
+                                    popUpFrame.add(buttonPanel, BorderLayout.SOUTH);
+
                                     popUpFrame.setSize(720, 405);
                                     popUpFrame.setResizable(false);
                                     popUpFrame.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);

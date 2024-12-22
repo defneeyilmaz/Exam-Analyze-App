@@ -59,23 +59,20 @@ public class Frame extends JFrame {
                 inputPanel.add(passwordLabel);
                 inputPanel.add(this.passwordField);
 
-                // Buttons
                 this.loginButton = new JButton("Login");
                 this.loginButton.setAlignmentX(Component.CENTER_ALIGNMENT);
                 this.signUpButton = new JButton("Sign Up");
                 this.signUpButton.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-                // Button Listeners
                 this.loginButton.addActionListener(e -> {
                     String username = usernameField.getText().trim();
                     String password = new String(passwordField.getPassword()).trim();
 
-                    // Update the query to select all columns
                     String query = "SELECT * FROM Lecturers WHERE username = '" + username + "' AND password = '" + password + "'";
                     out.println(query);
 
                     try {
-                        // Read the response from the server
+
                         Object response = objectInput.readObject();
 
                         if (response instanceof List<?> && !((List<?>) response).isEmpty()) {
@@ -780,7 +777,15 @@ public class Frame extends JFrame {
                                     "No row selected to remove.", "Error", JOptionPane.ERROR_MESSAGE);
                         }
                     });
-                    seeButton.addActionListener(e ->{
+                    seeButton.addActionListener(new SeeButtonListener());
+                }
+                private class SeeButtonListener implements ActionListener{
+                    JFrame popUpFrame;
+                    JTable table;
+                    JScrollPane scrollPane;
+                    ExamViewModel examTableModel;
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
                         int selectedIndex = tabbedPane.getSelectedIndex();
                         JTable tempTable = tables.get(selectedIndex);
                         StudentTableModel tableModel = (StudentTableModel) tables.get(selectedIndex).getModel();
@@ -798,39 +803,44 @@ public class Frame extends JFrame {
                                 ex.printStackTrace();
                             }
 
-                            JFrame popUpFrame = new JFrame("Student Information");
+                            Toolkit kit = Toolkit.getDefaultToolkit();
+                            Dimension screenSize = kit.getScreenSize();
+                            int width = screenSize.width;
+                            int height = screenSize.height;
+
+                            popUpFrame = new JFrame("Student Information");
                             popUpFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
                             popUpFrame.setSize(width / 5 * 2, height / 5 * 2);
                             popUpFrame.setLocationRelativeTo(null);
 
+                            JPanel container = new JPanel(new GridLayout(1, 2));
 
-                            JPanel container = new JPanel();
-                            container.setLayout(new BorderLayout());
+                            JPanel left = new JPanel(new BorderLayout());
+                            examTableModel = new ExamViewModel();
 
+                            table = new JTable(examTableModel);
+                            scrollPane = new JScrollPane(table);
+                            left.add(scrollPane, BorderLayout.CENTER);
 
-                            JPanel left = new JPanel();
-                            left.setBorder(new TitledBorder(""));
-                            left.add(new JLabel("aaa"));
-
-                            left.setLayout(new FlowLayout(FlowLayout.CENTER));
-
+                            JButton addScoreButton = new JButton("Add Score");
+                            addScoreButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+                            addScoreButton.addActionListener(a -> {
+                                JOptionPane.showMessageDialog(popUpFrame, "Add Score button clicked!");
+                            });
+                            left.add(addScoreButton, BorderLayout.SOUTH);
 
                             JPanel right = new JPanel();
-                            right.setBorder(new TitledBorder(""));
-
-
+                            right.setLayout(new BoxLayout(right, BoxLayout.Y_AXIS));
 
                             JPanel info = new JPanel();
-
                             info.setLayout(new BoxLayout(info, BoxLayout.Y_AXIS));
-                            info.add(new JLabel("Name: " + name));
-                            info.add(new JLabel("Student ID: " + studentID));
-                            info.add(new JLabel("Section: " + section));
+                            info.setAlignmentX(Component.LEFT_ALIGNMENT);
+                            info.add(new JLabel("Name: "+name));
+                            info.add(new JLabel("Student ID: "+studentID));
+                            info.add(new JLabel("Section: "+section));
 
-
-                            JPanel LO = new JPanel();
-                            LO.setLayout(new GridLayout(0, 2));
-
+                            JPanel LO = new JPanel(new GridLayout(0, 2, 3, 3));
+                            LO.setBorder(BorderFactory.createTitledBorder("Learning Outcomes"));
                             ArrayList<JTextField> textFields = new ArrayList<>();
                             for (int i = 1; i <= loPanel.tablePanel.tableModel.getRowCount(); i++) {
                                 LO.add(new JLabel("LO" + i + ":"));
@@ -841,24 +851,85 @@ public class Frame extends JFrame {
                                 LO.add(textField);
                             }
 
-
                             right.add(info);
+
                             right.add(LO);
-
-                            right.setLayout(new BoxLayout(right,BoxLayout.Y_AXIS));
-
+                            populateTable();
                             container.add(left);
                             container.add(right);
-                            container.setLayout(new FlowLayout(FlowLayout.LEFT));
 
                             popUpFrame.add(container, BorderLayout.CENTER);
                             popUpFrame.setVisible(true);
 
+
+
                         }else{
-                            JOptionPane.showMessageDialog(this,
+                            JOptionPane.showMessageDialog(popUpFrame,
                                     "No row selected.", "Error", JOptionPane.ERROR_MESSAGE);
                         }
-                    });
+                    }
+                    private void populateTable(){
+                        String setCourses = "SELECT examID ,examname FROM Exams WHERE coursecode = \"" +
+                                leftPanel.courseListPanel.list.getSelectedValue() + "\" ";
+                        try {
+                            out.println(setCourses);
+                            Object response = objectInput.readObject();
+
+                            if (response instanceof List<?> && !((List<?>) response).isEmpty()) {
+                                List<?> responseList = (List<?>) response;
+
+                                for (Object exam : responseList) {
+                                    @SuppressWarnings("unchecked")
+                                    Map<String, String> examMap = (Map<String, String>) exam;
+                                    examTableModel.addRow(new Object[]{examMap.get("examID"),examMap.get("examname")});
+                                }
+                            }
+                        } catch (IOException | ClassNotFoundException ex) {
+                            ex.printStackTrace();
+                        }
+                    }
+                    class ExamViewModel extends AbstractTableModel {
+
+                        private String[] columnNames = {"Exam ID", "Exam Name"};
+                        private ArrayList<Object[]> data;
+
+                        public ExamViewModel(){
+                            data = new ArrayList<>();
+                        }
+                        public int getColumnCount() {
+                            return columnNames.length;
+                        }
+
+                        public int getRowCount() {
+                            return data.size();
+                        }
+
+                        public Object getValueAt(int row, int col) {
+                            return data.get(row)[col];
+                        }
+
+                        public Object getRow(int row) {
+                            return data.get(row);
+                        }
+
+                        public String getColumnName(int col) {
+                            return columnNames[col];
+                        }
+
+                        public void addRow(Object[] rowData) {
+                            data.add(rowData);
+                            fireTableRowsInserted(data.size() - 1, data.size() - 1);
+                        }
+
+                        public void removeSelectedRow(int row) {
+                            if (row >= 0 && row < data.size()) {
+                                data.remove(row);
+                                fireTableRowsDeleted(row, row);
+
+                            }
+                        }
+                    }
+
                 }
                 private void populateTable(){
                     String query1 = "SELECT studentID, coursecode, section  FROM Enrollments WHERE coursecode = \""+leftPanel.courseListPanel.list.getSelectedValue()+"\"";

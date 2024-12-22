@@ -1973,24 +1973,57 @@ public class Frame extends JFrame {
                         ex.printStackTrace();
                     }
 
+                    List<String> studentIDs = new ArrayList<>();
+                    String getStudents = "SELECT studentID FROM Enrollments WHERE coursecode = \"" + leftPanel.courseListPanel.list.getSelectedValue() + "\"";
+                    try {
+                        out.println(getStudents);
+                        Object response = objectInput.readObject();
+
+                        if (response instanceof List<?> && !((List<?>) response).isEmpty()) {
+                            List<?> responseList = (List<?>) response;
+
+                            for (Object students : responseList) {
+                                @SuppressWarnings("unchecked")
+                                Map<String, String> student = (Map<String, String>) students;
+                                studentIDs.add(student.get("studentID"));
+                            }
+                        }
+                    } catch (IOException | ClassNotFoundException ex) {
+                        ex.printStackTrace();
+                    }
+
                     //"ID", "Question", "Answer", "Learning Outcomes", "Point", "Select"
                     LinkedHashMap<String, String> addQuestion = new LinkedHashMap<>();
+
                     for (Object[] question : selectedQuestions) {
                         addQuestion.put("coursecode", leftPanel.courseListPanel.list.getSelectedValue());
                         addQuestion.put("question", question[1].toString());
                         addQuestion.put("answer", question[2].toString());
                         addQuestion.put("possiblepoint", question[4].toString());
                         addQuestion.put("LO", question[3].toString());
-                        addQuestion.put("questionID", createID());
+                        String questionID = createID();
+                        addQuestion.put("questionID", questionID);
                         addQuestion.put("examID", ID);
                         String newQuestion = insertInto("Questions", addQuestion);
-                        System.out.println(newQuestion);
                         try {
                             out.println(newQuestion);
                             String response = in.readLine();
                             System.out.println(response);
                         } catch (IOException ex) {
                             ex.printStackTrace();
+                        }
+                        LinkedHashMap<String, String> setGrade = new LinkedHashMap<>();
+                        for (String studentID : studentIDs) {
+                            setGrade.put("studentID", studentID);
+                            setGrade.put("questionID", questionID);
+                            setGrade.put("point", "0");
+                            String setGrades = insertInto("Grades", setGrade);
+                            try {
+                                out.println(setGrades);
+                                String response = in.readLine();
+                            }   catch (IOException e) {
+                                e.printStackTrace();
+                            }
                         }
                     }
                 }

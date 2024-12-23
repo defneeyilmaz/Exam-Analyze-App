@@ -39,6 +39,11 @@ public class Frame extends JFrame {
         String name;
         String faculty;
 
+        /**
+         * Login Class for handling the login panel.
+         * Login Button -> Queries the input and proceeds if there is an account.
+         * Sign-up Button -> Proceeds to sign-up page.
+         */
         private class LoginScreen extends JPanel {
             JTextField usernameField;
             JPasswordField passwordField;
@@ -82,7 +87,6 @@ public class Frame extends JFrame {
                         if (response instanceof List<?> && !((List<?>) response).isEmpty()) {
                             List<?> responseList = (List<?>) response;
 
-                            // Assuming the server sends rows as maps or objects
                             if (responseList.getFirst() instanceof Map<?, ?>) {
                                 @SuppressWarnings("unchecked")
                                 Map<String, String> rowData = (Map<String, String>) responseList.getFirst();
@@ -131,6 +135,11 @@ public class Frame extends JFrame {
 
         SignupScreen signupScreen;
 
+        /**
+         * Signup class for handling the signup panel.
+         * Sign-up Button -> Sign-ups the new user, records it to the db.
+         * Cancel Button -> Proceeds to Log-in page.
+         */
         private class SignupScreen extends JPanel {
             JTextField usernameField;
             JPasswordField passwordField, confirmPasswordField;
@@ -243,10 +252,16 @@ public class Frame extends JFrame {
     //------------------Left Panel---------------------
     LeftPanel leftPanel;
 
+    /**
+     * Left Panel class for handling all the components at the left panel.
+     */
     private class LeftPanel extends JPanel {
         //------------------User Information Panel---------------------
         UserInfoPanel userInfoPanel;
 
+        /**
+         * User Info Panel presents the username and faculty of the current lecturer.
+         */
         private class UserInfoPanel extends JPanel {
             JPanel userNamePanel;
             JLabel userNameLabel;
@@ -274,11 +289,17 @@ public class Frame extends JFrame {
         //------------------Course List Panel---------------------
         CourseListPanel courseListPanel;
 
+        /**
+         * Course List Panel presents the lecturer's selected lectures.
+         */
         private class CourseListPanel extends JPanel {
             DefaultListModel<String> listModel;
             JList<String> list;
             JScrollPane scrollPane;
 
+            /**
+             * Selects current user's lecture and adds to the list.
+             */
             void setCourses() {
                 String setCourses = "SELECT coursename FROM Courses WHERE lecturername = '" + loginSignupPanel.name + "'";
                 try {
@@ -320,6 +341,11 @@ public class Frame extends JFrame {
         //------------------Button Panel---------------------
         ButtonPanel buttonPanel;
 
+        /**
+         * Button Panel class for handling the add course and delete course buttons.
+         * Add Button -> pops-up a course list and adds and saves the selected course.
+         * Remove Button -> deletes the selected course both from list and db.
+         */
         private class ButtonPanel extends JPanel {
             JButton addButton;
             JButton removeButton;
@@ -435,6 +461,9 @@ public class Frame extends JFrame {
     //------------------Right Panel---------------------
     RightPanel rightPanel;
 
+    /**
+     * Right Panel class for handling all the elements at the right panel.
+     */
     private class RightPanel extends JPanel {
         //------------------Course Name Panel---------------------
         CourseNamePanel courseNamePanel;
@@ -1318,6 +1347,10 @@ public class Frame extends JFrame {
                     tabbedPane.addTab("Section " + section, panel);
                 }
 
+                /** Read student data from a csv file that is chosen from gui and maps into a hashmap
+                 * @param absolutePath
+                 * @return sections data
+                 */
                 private HashMap<String, ArrayList<Object[]>> readStudentsFromCSV(String absolutePath) {
                     HashMap<String, ArrayList<Object[]>> sectionData = new HashMap<>();
                     Scanner sc;

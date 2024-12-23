@@ -696,7 +696,7 @@ public class Frame extends JFrame {
                     buttonPanel.setPreferredSize(new Dimension(width / 32 * 6, height / 32 * 2));
 
                     populateTable();
-                    if(tabbedPane.getTabCount()!=0){
+                    if (tabbedPane.getTabCount() != 0) {
                         seeButton.setEnabled(true);
                         removeButton.setEnabled(true);
                     }
@@ -900,8 +900,6 @@ public class Frame extends JFrame {
                             LO.setBorder(BorderFactory.createTitledBorder("Learning Outcomes"));
 
 
-
-
                             ArrayList<Integer> studentPoints = new ArrayList<>();
                             ArrayList<Integer> possiblePoints = new ArrayList<>();
 
@@ -912,8 +910,7 @@ public class Frame extends JFrame {
                             }
 
 
-
-                            String query = "SELECT questionID, possiblepoint, LO FROM Questions WHERE examID IS NOT NULL AND coursecode = \"" +leftPanel.courseListPanel.list.getSelectedValue()+ "\" ";
+                            String query = "SELECT questionID, possiblepoint, LO FROM Questions WHERE examID IS NOT NULL AND coursecode = \"" + leftPanel.courseListPanel.list.getSelectedValue() + "\" ";
 
                             try {
                                 out.println(query);
@@ -930,7 +927,7 @@ public class Frame extends JFrame {
                                         String[] LOs = questionMap.get("LO").split(",");
 
 
-                                        String query1 = "SELECT point FROM Grades WHERE questionID = \""+questionID+"\" AND studentID = \""+studentID+"\"";
+                                        String query1 = "SELECT point FROM Grades WHERE questionID = \"" + questionID + "\" AND studentID = \"" + studentID + "\"";
                                         try {
                                             out.println(query1);
                                             Object response1 = objectInput.readObject();
@@ -941,10 +938,10 @@ public class Frame extends JFrame {
                                                     @SuppressWarnings("unchecked")
                                                     Map<String, Integer> pointMap = (Map<String, Integer>) point;
 
-                                                    for (String tempLO : LOs){
+                                                    for (String tempLO : LOs) {
 
-                                                        studentPoints.set(Integer.parseInt(tempLO.substring(2))-1,studentPoints.get(Integer.parseInt(tempLO.substring(2))-1)+pointMap.get("point"));
-                                                        possiblePoints.set(Integer.parseInt(tempLO.substring(2))-1,possiblePoints.get(Integer.parseInt(tempLO.substring(2))-1)+Integer.parseInt(possiblePoint));
+                                                        studentPoints.set(Integer.parseInt(tempLO.substring(2)) - 1, studentPoints.get(Integer.parseInt(tempLO.substring(2)) - 1) + pointMap.get("point"));
+                                                        possiblePoints.set(Integer.parseInt(tempLO.substring(2)) - 1, possiblePoints.get(Integer.parseInt(tempLO.substring(2)) - 1) + Integer.parseInt(possiblePoint));
                                                     }
                                                 }
                                             }
@@ -962,13 +959,13 @@ public class Frame extends JFrame {
                                 JTextField textField = new JTextField();
                                 textField.setEnabled(false);
 
-                                int studentPoint= studentPoints.get(i-1);
-                                int possiblePoint = possiblePoints.get(i-1);
+                                int studentPoint = studentPoints.get(i - 1);
+                                int possiblePoint = possiblePoints.get(i - 1);
 
-                                if(possiblePoint!=0){
-                                    double percent = (double)studentPoint / (double)possiblePoint;
-                                    textField.setText("%"+percent*100);
-                                }else {
+                                if (possiblePoint != 0) {
+                                    double percent = (double) studentPoint / (double) possiblePoint;
+                                    textField.setText("%" + percent * 100);
+                                } else {
                                     textField.setText("%0.0");
                                 }
 
@@ -1245,7 +1242,9 @@ public class Frame extends JFrame {
                     }
                 }
 
-                /** Adds a student by student's section into tabbed pane.
+                /**
+                 * Adds a student by student's section into tabbed pane.
+                 *
                  * @param student
                  * @param section
                  */
@@ -1262,7 +1261,9 @@ public class Frame extends JFrame {
                     }
                 }
 
-                /** Adds new student into both database and corresponding table. Sets the student's point 0 by default.
+                /**
+                 * Adds new student into both database and corresponding table. Sets the student's point 0 by default.
+                 *
                  * @param data
                  */
                 private void addNewStudent(HashMap<String, ArrayList<Object[]>> data) {
@@ -1375,8 +1376,8 @@ public class Frame extends JFrame {
                                     }
 
                                     for (String exam : exams) {
-                                        String getQuestions ="SELECT questionID FROM Questions WHERE examID = \"" + exam +
-                                                "\" AND coursecode = \"" +leftPanel.courseListPanel.list.getSelectedValue()+ "\" ";
+                                        String getQuestions = "SELECT questionID FROM Questions WHERE examID = \"" + exam +
+                                                "\" AND coursecode = \"" + leftPanel.courseListPanel.list.getSelectedValue() + "\" ";
                                         try {
                                             out.println(getQuestions);
                                             Object qResponse = objectInput.readObject();
@@ -1408,7 +1409,9 @@ public class Frame extends JFrame {
                     }
                 }
 
-                /** Adds new tab if there is a need.
+                /**
+                 * Adds new tab if there is a need.
+                 *
                  * @param sectionData
                  * @param section
                  */
@@ -1434,7 +1437,9 @@ public class Frame extends JFrame {
                     tabbedPane.addTab("Section " + section, panel);
                 }
 
-                /** Read student data from a csv file that is chosen from gui and maps into a hashmap
+                /**
+                 * Read student data from a csv file that is chosen from gui and maps into a hashmap
+                 *
                  * @param absolutePath
                  * @return sections data
                  */
@@ -1803,7 +1808,8 @@ public class Frame extends JFrame {
                         popUpFrame.setVisible(true);
                     }
 
-                    /** Adds checkboxes to the panel dynamically based on the number of Learning Outcomes (LOs)
+                    /**
+                     * Adds checkboxes to the panel dynamically based on the number of Learning Outcomes (LOs)
                      * retrieved from the database for the selected course.
                      */
                     private void addCheckBox() {
@@ -2142,7 +2148,9 @@ public class Frame extends JFrame {
                     }
                 }
 
-                /** Takes the parameters for creating a new exam. Checks constraints and creates new exam if there is no issue.
+                /**
+                 * Takes the parameters for creating a new exam. Checks constraints and creates new exam if there is no issue.
+                 *
                  * @param name
                  * @param type
                  * @param selectedQuestions
@@ -2467,14 +2475,14 @@ public class Frame extends JFrame {
                                     closeButton.addActionListener(a -> {
 
                                         String desktopPath = System.getProperty("user.home") + "/Desktop";
-                                        String fileName = examID +".txt";
+                                        String fileName = examID + ".txt";
 
                                         Path filePath = Paths.get(desktopPath, fileName);
 
                                         try (FileWriter writer = new FileWriter(filePath.toFile())) {
                                             int counter = 1;
                                             for (Object[] temp : questionTableModel.data) {
-                                                writer.write(counter+") "+temp[0]+"\n\n\n");
+                                                writer.write(counter + ") " + temp[0] + "\n\n\n");
                                                 counter++;
                                             }
                                             popUpFrame.dispose();
@@ -2679,7 +2687,9 @@ public class Frame extends JFrame {
         }
     }
 
-    /** Support function for INSERT statements.
+    /**
+     * Support function for INSERT statements.
+     *
      * @param tableName
      * @param attributes
      * @return
@@ -2710,7 +2720,9 @@ public class Frame extends JFrame {
         return formattedValues.toString();
     }
 
-    /** Creates a unique ID for primary keys.
+    /**
+     * Creates a unique ID for primary keys.
+     *
      * @return unique ID based on current time.
      */
     private String createID() {

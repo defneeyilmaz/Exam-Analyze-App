@@ -205,6 +205,7 @@ class ClientHandler extends Thread {
 
     /**
      * Executes the select queries and returns result.
+     *
      * @param query
      * @return query result.
      */
@@ -234,7 +235,9 @@ class ClientHandler extends Thread {
         return null;
     }
 
-    /** Executes the update queries and returns result.
+    /**
+     * Executes the update queries and returns result.
+     *
      * @param query
      * @return query result.
      */

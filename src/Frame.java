@@ -1270,6 +1270,7 @@ public class Frame extends JFrame {
                                                         System.out.println(countMap2.get("enrollment"));
                                                         if (countMap2.get("enrollment") == 0) {
                                                             LinkedHashMap<String, String> student = new LinkedHashMap<>();
+
                                                             student.put("studentID", ID);
                                                             student.put("coursecode", leftPanel.courseListPanel.list.getSelectedValue());
                                                             student.put("section", section);
@@ -1292,6 +1293,10 @@ public class Frame extends JFrame {
                                             }
                                         } else {
                                             LinkedHashMap<String, String> student = new LinkedHashMap<>();
+                                            LinkedHashMap<String, String> emptyGrade = new LinkedHashMap<>();
+                                            emptyGrade.put("studentID", ID);
+                                            emptyGrade.put("questionID", "");
+                                            emptyGrade.put("point", "0");
                                             student.put("studentID", ID);
                                             student.put("name", name);
                                             String insert1 = insertInto("Students", student);
@@ -1320,6 +1325,58 @@ public class Frame extends JFrame {
                                 }
                             } catch (IOException | ClassNotFoundException ex) {
                                 ex.printStackTrace();
+                            }
+
+                            LinkedHashMap<String, String> emptyGrade = new LinkedHashMap<>();
+                            emptyGrade.put("studentID", ID);
+                            emptyGrade.put("questionID", "");
+                            emptyGrade.put("point", "0");
+
+                            String getExams = "SELECT examID FROM Exams WHERE coursecode = \"" +
+                                    leftPanel.courseListPanel.list.getSelectedValue() + "\" ";
+                            try {
+                                out.println(getExams);
+                                Object response = objectInput.readObject();
+
+
+                                if (response instanceof List<?> && !((List<?>) response).isEmpty()) {
+                                    List<?> responseList = (List<?>) response;
+                                    ArrayList<String> exams = new ArrayList<>();
+                                    for (Object exam : responseList) {
+                                        @SuppressWarnings("unchecked")
+                                        Map<String, String> examMap = (Map<String, String>) exam;
+                                        exams.add(examMap.get("examID"));
+                                    }
+
+                                    for (String exam : exams) {
+                                        String getQuestions ="SELECT questionID FROM Questions WHERE examID = \"" + exam +
+                                                "\" AND coursecode = \"" +leftPanel.courseListPanel.list.getSelectedValue()+ "\" ";
+                                        try {
+                                            out.println(getQuestions);
+                                            Object qResponse = objectInput.readObject();
+                                            if (qResponse instanceof List<?> && !((List<?>) qResponse).isEmpty()) {
+                                                List<?> qResponseList = (List<?>) qResponse;
+                                                for (Object qResponse1 : qResponseList) {
+                                                    @SuppressWarnings("unchecked")
+                                                    Map<String, String> qResponseMap = (Map<String, String>) qResponse1;
+                                                    emptyGrade.put("questionID", qResponseMap.get("questionID"));
+                                                    try {
+                                                        out.println(insertInto("Grades", emptyGrade));
+                                                        String response_ = in.readLine();
+                                                        System.out.println(response_);
+                                                    } catch (IOException ex) {
+                                                        ex.printStackTrace();
+                                                    }
+                                                }
+                                            }
+                                        } catch (IOException | ClassNotFoundException exp) {
+                                            exp.printStackTrace();
+                                        }
+                                    }
+
+                                }
+                            } catch (IOException | ClassNotFoundException exc) {
+                                exc.printStackTrace();
                             }
                         }
                     }
@@ -2127,18 +2184,37 @@ public class Frame extends JFrame {
                         } catch (IOException ex) {
                             ex.printStackTrace();
                         }
-                        LinkedHashMap<String, String> setGrade = new LinkedHashMap<>();
-                        for (String studentID : studentIDs) {
-                            setGrade.put("studentID", studentID);
-                            setGrade.put("questionID", questionID);
-                            setGrade.put("point", "0");
-                            String setGrades = insertInto("Grades", setGrade);
-                            try {
-                                out.println(setGrades);
-                                String response = in.readLine();
-                            } catch (IOException e) {
-                                e.printStackTrace();
+
+                        String checkStudents = "SELECT COUNT(*) AS studentNumber FROM Students";
+                        try {
+                            out.println(checkStudents);
+                            Object response = objectInput.readObject();
+
+                            if (response instanceof List<?> && !((List<?>) response).isEmpty()) {
+                                List<?> responseList = (List<?>) response;
+                                @SuppressWarnings("unchecked")
+                                Map<String, Integer> number = (Map<String, Integer>) responseList.getFirst();
+                                int stdNum = number.get("studentNumber");
+                                if (stdNum != 0) {
+                                    LinkedHashMap<String, String> setGrade = new LinkedHashMap<>();
+                                    for (String studentID : studentIDs) {
+                                        setGrade.put("studentID", studentID);
+                                        setGrade.put("questionID", questionID);
+                                        setGrade.put("point", "0");
+                                        String setGrades = insertInto("Grades", setGrade);
+                                        try {
+                                            out.println(setGrades);
+                                            String response2 = in.readLine();
+                                        } catch (IOException e) {
+                                            e.printStackTrace();
+                                        }
+                                    }
+                                } else {
+                                    return;
+                                }
                             }
+                        } catch (IOException | ClassNotFoundException exception) {
+                            exception.printStackTrace();
                         }
                     }
                 }

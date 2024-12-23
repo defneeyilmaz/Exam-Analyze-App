@@ -56,6 +56,9 @@ public class Scraper {
         }
     }
 
+    /**
+     * Scrapes the website to find all course codes starts with CE or SE.
+     */
     private void getAllFacultyCourse() {
         for (String faculty : faculties) {
             try {
@@ -91,7 +94,6 @@ public class Scraper {
                 e.printStackTrace();
             }
         }
-        print();
     }
 
     /**

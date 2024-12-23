@@ -10,6 +10,9 @@ public class Server {
     private static final int PORT = 12345;
     public static final String DB_URL = "jdbc:sqlite:db.sqlite";
 
+    /**
+     * Handles the client requests and creates threads for each client in order to handle each client's requests.
+     */
     public static void main(String[] args) {
         try (ServerSocket serverSocket = new ServerSocket(PORT)) {
             System.out.println("Server is listening on port " + PORT);
@@ -29,6 +32,10 @@ public class Server {
         }
     }
 
+    /**
+     * Sets up the database at the beginning of the server execution. Creates tables if not exists.
+     * If the CourseInfo table is empty, populates the table with scraped course data.
+     */
     private static void setupDatabase() {
         try (Connection conn = DriverManager.getConnection(DB_URL);
              Statement stmt = conn.createStatement()) {
@@ -168,6 +175,10 @@ class ClientHandler extends Thread {
         this.socket = socket;
     }
 
+    /**
+     * Executed for each client request and listens request until the client disconnected.
+     * Separates each request into select or update.
+     */
     @Override
     public void run() {
         try (InputStream input = socket.getInputStream();
@@ -191,6 +202,11 @@ class ClientHandler extends Thread {
         }
     }
 
+    /**
+     * Executes the select queries and returns result.
+     * @param query
+     * @return query result.
+     */
     private List<Object> executeSelect(String query) {
         try (Connection conn = DriverManager.getConnection(Server.DB_URL);
              Statement stmt = conn.createStatement()) {
@@ -210,17 +226,17 @@ class ClientHandler extends Thread {
                 }
 
                 return result.toList();
-            } /*else {
-                int rowsAffected = stmt.executeUpdate(query);
-                return "Query OK, " + rowsAffected + " rows affected.";
             }
-            */
         } catch (SQLException ex) {
-            ex.printStackTrace();//"Database error: " + ex.getMessage();
+            ex.printStackTrace();
         }
         return null;
     }
 
+    /** Executes the update queries and returns result.
+     * @param query
+     * @return query result.
+     */
     private String executeUpdate(String query) {
         try (Connection conn = DriverManager.getConnection(Server.DB_URL);
              Statement stmt = conn.createStatement()) {

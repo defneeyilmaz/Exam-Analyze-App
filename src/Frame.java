@@ -655,6 +655,9 @@ public class Frame extends JFrame {
             //------------------ Student Panel ---------------------
             StudentPanel studentPanel;
 
+            /**
+             * Panel for presenting course's students.
+             */
             private class StudentPanel extends JPanel {
                 JTabbedPane tabbedPane;
                 ArrayList<JTable> tables;
@@ -837,6 +840,9 @@ public class Frame extends JFrame {
                     seeButton.addActionListener(new SeeButtonListener());
                 }
 
+                /**
+                 * This class allow lecturer to input exam results for a selected student.
+                 */
                 private class SeeButtonListener implements ActionListener {
                     JFrame popUpFrame;
                     JTable table;
@@ -1108,6 +1114,9 @@ public class Frame extends JFrame {
                         }
                     }
 
+                    /**
+                     * Populates stored exams on the see student pop-up frame.
+                     */
                     private void populateTable() {
                         String setCourses = "SELECT examID ,examname FROM Exams WHERE coursecode = \"" +
                                 leftPanel.courseListPanel.list.getSelectedValue() + "\" ";
@@ -1198,6 +1207,9 @@ public class Frame extends JFrame {
                     }
                 }
 
+                /**
+                 * Populates the student table for the selected course.
+                 */
                 private void populateTable() {
                     String query1 = "SELECT studentID, coursecode, section  FROM Enrollments WHERE coursecode = \"" + leftPanel.courseListPanel.list.getSelectedValue() + "\"";
                     try {
@@ -1233,6 +1245,10 @@ public class Frame extends JFrame {
                     }
                 }
 
+                /** Adds a student by student's section into tabbed pane.
+                 * @param student
+                 * @param section
+                 */
                 private void addNewStudentToTable(Object[] student, String section) {
                     if (tables.size() >= Integer.parseInt(section)) {
                         String tab = tabbedPane.getTitleAt(Integer.parseInt(section) - 1);
@@ -1246,6 +1262,9 @@ public class Frame extends JFrame {
                     }
                 }
 
+                /** Adds new student into both database and corresponding table. Sets the student's point 0 by default.
+                 * @param data
+                 */
                 private void addNewStudent(HashMap<String, ArrayList<Object[]>> data) {
                     String ID;
                     String name;
@@ -1389,6 +1408,10 @@ public class Frame extends JFrame {
                     }
                 }
 
+                /** Adds new tab if there is a need.
+                 * @param sectionData
+                 * @param section
+                 */
                 private void addNewTab(ArrayList<Object[]> sectionData, String section) {
                     StudentTableModel tableModel = new StudentTableModel(sectionData);
                     JTable table = new JTable(tableModel);
@@ -1484,6 +1507,9 @@ public class Frame extends JFrame {
             //------------------Question Panel---------------------
             JPanel questionPanel;
 
+            /**
+             * Question Panel for representing existing questions and adding new questions.
+             */
             private class QuestionPanel extends JPanel {
                 JButton addButton;
                 JButton removeButton;
@@ -1629,6 +1655,9 @@ public class Frame extends JFrame {
                     setBorder(BorderFactory.createTitledBorder("Questions"));
                 }
 
+                /**
+                 * Pops-up a new frame to enter new question.
+                 */
                 private class AddButtonListener implements ActionListener {
                     ArrayList<JCheckBox> checkBoxes;
                     JFrame popUpFrame;
@@ -1774,6 +1803,9 @@ public class Frame extends JFrame {
                         popUpFrame.setVisible(true);
                     }
 
+                    /** Adds checkboxes to the panel dynamically based on the number of Learning Outcomes (LOs)
+                     * retrieved from the database for the selected course.
+                     */
                     private void addCheckBox() {
                         String query = "SELECT COUNT(*) AS LOCount FROM LOs WHERE coursecode = \"" + leftPanel.courseListPanel.list.getSelectedValue() + "\"";
                         int LOCount = 0;
@@ -1857,6 +1889,9 @@ public class Frame extends JFrame {
             //------------------Exam Panel---------------------
             JPanel examPanel;
 
+            /**
+             * Class for representing existing exams and creating new exams.
+             */
             private class ExamPanel extends JPanel {
                 ExamTableModel tableModel;
                 JTable table;
@@ -1908,6 +1943,9 @@ public class Frame extends JFrame {
                     }
                 }
 
+                /**
+                 * Pops up new frame in order to create a new exam.
+                 */
                 private class CreateExamButtonListener implements ActionListener {
                     private int selectedQuestionRow = -1;
 
@@ -2104,6 +2142,11 @@ public class Frame extends JFrame {
                     }
                 }
 
+                /** Takes the parameters for creating a new exam. Checks constraints and creates new exam if there is no issue.
+                 * @param name
+                 * @param type
+                 * @param selectedQuestions
+                 */
                 private void createExamFromSelectedQuestions(String name, String type, List<Object[]> selectedQuestions) {
                     String examName = name;
                     String examType = type;
@@ -2461,7 +2504,6 @@ public class Frame extends JFrame {
                     }
                 }
 
-                //TODO have to delete the questions too
                 private class RemoveExamButtonListener implements ActionListener {
                     @Override
                     public void actionPerformed(ActionEvent e) {
@@ -2619,6 +2661,9 @@ public class Frame extends JFrame {
         repaint();
     }
 
+    /**
+     * Support function for setting up the socket connection.
+     */
     private void setupConnection() {
         try {
             socket = new Socket(SERVER_ADDRESS, SERVER_PORT);
@@ -2634,6 +2679,11 @@ public class Frame extends JFrame {
         }
     }
 
+    /** Support function for INSERT statements.
+     * @param tableName
+     * @param attributes
+     * @return
+     */
     public String insertInto(String tableName, LinkedHashMap<String, String> attributes) {
         StringBuilder query = new StringBuilder();
         query.append("INSERT INTO ").append(tableName).append(" (");
@@ -2660,6 +2710,9 @@ public class Frame extends JFrame {
         return formattedValues.toString();
     }
 
+    /** Creates a unique ID for primary keys.
+     * @return unique ID based on current time.
+     */
     private String createID() {
         return LocalDateTime.now().toString().replace("-", "").replace("T", "").replace(":", "").replace(".", "");
     }

@@ -471,6 +471,9 @@ public class Frame extends JFrame {
         private class CourseNamePanel extends JPanel {
             JLabel courseNameLabel;
 
+            /**
+             * Course Name Panel class for displaying lecturer's username and faculty.
+             */
             public CourseNamePanel(String courseName) {
                 this.courseNameLabel = new JLabel();
                 updateCourseName(courseName);
@@ -540,6 +543,9 @@ public class Frame extends JFrame {
                         }
                     }
 
+                    /**
+                     * Getting selected course's learning outcomes.
+                     */
                     void getLOs() {
                         String selectedCourse = leftPanel.courseListPanel.list.getSelectedValue();
                         String query = "SELECT number, text FROM LOs WHERE coursecode = \"" + selectedCourse + "\"";
@@ -595,6 +601,9 @@ public class Frame extends JFrame {
                 private class EvaluationPanel extends JPanel {
                     JLabel evaluationCriteria;
 
+                    /**
+                     * Getting selected course's evaluation criteria.
+                     */
                     String getEvaluationCriteria() {
                         String selectedCourse = leftPanel.courseListPanel.list.getSelectedValue();
                         String query = "SELECT evaluationcriteria FROM CourseInfo WHERE coursecode = \"" + selectedCourse + "\"";
@@ -643,7 +652,7 @@ public class Frame extends JFrame {
             }
 
 
-            //------------------ Learning Outcome Panel ---------------------
+            //------------------ Student Panel ---------------------
             StudentPanel studentPanel;
 
             private class StudentPanel extends JPanel {
@@ -941,8 +950,6 @@ public class Frame extends JFrame {
                             } catch (IOException | ClassNotFoundException ex) {
                                 ex.printStackTrace();
                             }
-
-                            //ArrayList<JTextField> textFields = new ArrayList<>();
 
                             for (int i = 1; i <= loPanel.tablePanel.tableModel.getRowCount(); i++) {
                                 LO.add(new JLabel("LO" + i + ":"));
@@ -1902,7 +1909,7 @@ public class Frame extends JFrame {
                 }
 
                 private class CreateExamButtonListener implements ActionListener {
-                    private int selectedQuestionRow = -1;  // This will store the selected row index
+                    private int selectedQuestionRow = -1;
 
                     @Override
                     public void actionPerformed(ActionEvent event) {
@@ -2219,7 +2226,6 @@ public class Frame extends JFrame {
                     }
                 }
 
-                // Table model for the list of exams (shown in the main ExamPanel)
                 private class ExamTableModel extends AbstractTableModel {
                     private String[] columnNames = {"ID", "Name", "Exam Type", "LO's"};
                     private ArrayList<Object[]> data = new ArrayList<>();
@@ -2389,8 +2395,6 @@ public class Frame extends JFrame {
                 }
 
                 private class ViewExamButtonListener implements ActionListener {
-                    int selectedRow = -1;
-
                     @Override
                     public void actionPerformed(ActionEvent e) {
                         int selectedRow = table.getSelectedRow();
@@ -2571,8 +2575,8 @@ public class Frame extends JFrame {
 
         Timer timer = new Timer(100, e -> {
             if (loginSignupPanel.success) {
-                ((Timer) e.getSource()).stop(); // Stop the timer
-                proceedToMainUI(); // Load the main UI
+                ((Timer) e.getSource()).stop();
+                proceedToMainUI();
             }
         });
         timer.start();

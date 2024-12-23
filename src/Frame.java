@@ -2589,7 +2589,7 @@ public class Frame extends JFrame {
         } catch (ClassNotFoundException e) {
             throw new RuntimeException(e);
         }
-
+        setTitle("Exam Analyze App");
         setSize(width / 4 * 3, height / 4 * 3);
         setLocation(width / 8, height / 8);
         setVisible(true);

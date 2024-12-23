@@ -76,7 +76,6 @@ public class Scraper {
                 e.printStackTrace();
             }
         }
-        System.out.println(courseCodes);
     }
 
     /**

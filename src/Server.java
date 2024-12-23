@@ -161,6 +161,7 @@ public class Server {
                         count++;
                     }
                 }
+                System.out.println("Scraping done.");
             }
         } catch (SQLException ex) {
             System.err.println("Database setup error: " + ex.getMessage());

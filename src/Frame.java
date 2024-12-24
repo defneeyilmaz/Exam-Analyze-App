@@ -2223,9 +2223,10 @@ public class Frame extends JFrame {
                     }
 
                     //"ID", "Question", "Answer", "Learning Outcomes", "Point", "Select"
-                    LinkedHashMap<String, String> addQuestion = new LinkedHashMap<>();
+
 
                     for (Object[] question : selectedQuestions) {
+                        LinkedHashMap<String, String> addQuestion = new LinkedHashMap<>();
                         addQuestion.put("coursecode", leftPanel.courseListPanel.list.getSelectedValue());
                         addQuestion.put("question", question[1].toString());
                         addQuestion.put("answer", question[2].toString());
@@ -2267,8 +2268,6 @@ public class Frame extends JFrame {
                                             e.printStackTrace();
                                         }
                                     }
-                                } else {
-                                    return;
                                 }
                             }
                         } catch (IOException | ClassNotFoundException exception) {
@@ -2349,13 +2348,13 @@ public class Frame extends JFrame {
                         if (col == 4) {
                             try {
                                 int pointValue = Integer.parseInt((String) value);
-                                if (pointValue < 0 || pointValue > 100) {
-                                    throw new NumberFormatException("Points must be between 0 and 100.");
+                                if (pointValue <= 0 || pointValue > 100) {
+                                    throw new NumberFormatException("Points must be between 1 and 100.");
                                 }
                                 data.get(row)[col] = value;
                                 fireTableCellUpdated(row, col);
                             } catch (NumberFormatException e) {
-                                JOptionPane.showMessageDialog(null, "Invalid point value. Please enter a valid integer between 0 and 100.", "Error", JOptionPane.ERROR_MESSAGE);
+                                JOptionPane.showMessageDialog(null, "Invalid point value. Please enter a valid integer between 1 and 100.", "Error", JOptionPane.ERROR_MESSAGE);
                             }
                         } else if (col == 5) {
                             data.get(row)[col] = value;

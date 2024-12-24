@@ -682,6 +682,7 @@ public class Frame extends JFrame {
                     buttonPanel.setLayout(new GridLayout(0, 2));
 
                     addButton = new JButton("Add");
+                    addButton.setEnabled(false);
                     removeButton = new JButton("Delete");
                     removeButton.setEnabled(false);
                     seeButton = new JButton("See");
@@ -699,6 +700,7 @@ public class Frame extends JFrame {
                     if (tabbedPane.getTabCount() != 0) {
                         seeButton.setEnabled(true);
                         removeButton.setEnabled(true);
+                        addButton.setEnabled(true);
                     }
 
                     addAllStudentsButton.addActionListener(e -> {
@@ -747,6 +749,7 @@ public class Frame extends JFrame {
                                 addNewStudent(readStudentsFromCSV(selectedFile.getAbsolutePath()));
                                 seeButton.setEnabled(true);
                                 removeButton.setEnabled(true);
+                                addButton.setEnabled(true);
                                 popUpFrame.dispose();
                             } else {
                                 JOptionPane.showMessageDialog(popUpFrame, "No file selected.");
@@ -804,6 +807,7 @@ public class Frame extends JFrame {
                                 addNewStudent(temp);
                                 seeButton.setEnabled(true);
                                 removeButton.setEnabled(true);
+                                addButton.setEnabled(true);
                                 popUpFrame.dispose();
                             }
                         });
